@@ -7,7 +7,7 @@ Tree *tree;
 CircleTreeDrawer *drawer;
 LeafTreeDrawer *leafDrawer;
 TreeAnimator *animator;
-int frameRate = 120;
+int frameRate = 60;
 
 ofFbo drawBuffer;
 
@@ -21,6 +21,7 @@ int getRetinaScale() {
 
 int bufferWidth;
 int bufferHeight;
+int screenScale;
 
 //--------------------------------------------------------------
 void ofApp::setup(){
@@ -51,19 +52,21 @@ void ofApp::setup(){
     ofSetCircleResolution(200);
     
     ofSetFrameRate(frameRate);
+        
+//    ofSetBackgroundAuto(false);
+//    
+    screenScale = getRetinaScale();
     
-    ofSetBackgroundAuto(false);
-    
-    int scale = getRetinaScale();
-    
-    bufferWidth = ofGetWidth() * scale;
-    bufferHeight = ofGetHeight() * scale;
-    
-    drawBuffer.allocate(bufferWidth, bufferHeight);
-    
-    drawBuffer.begin();
-    ofClear(0, 0, 0);
-    drawBuffer.end();
+    ofSetWindowShape(1024 * screenScale, 1024 * screenScale);
+//
+//    bufferWidth = ofGetWidth() * screenScale;
+//    bufferHeight = ofGetHeight() * screenScale;
+//
+//    drawBuffer.allocate(bufferWidth, bufferHeight);
+//    
+//    drawBuffer.begin();
+//    ofClear(0, 0, 0);
+//    drawBuffer.end();
 }
 
 //--------------------------------------------------------------
@@ -73,12 +76,16 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-    drawBuffer.begin();
-    ofTranslate(bufferWidth / 2, bufferHeight / 2);
-    leafDrawer->visitAll();
-    drawBuffer.end();
-    
-    drawBuffer.draw(0, 0);
+//    drawBuffer.begin();
+//    ofTranslate(bufferWidth / 2, bufferHeight / 2);
+//    leafDrawer->visitAll();
+//    drawBuffer.end();
+//    
+//    drawBuffer.draw(0, 0);
+    ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
+    ofScale(screenScale, screenScale);
+
+    drawer->visitAll();
 }
 
 //--------------------------------------------------------------
