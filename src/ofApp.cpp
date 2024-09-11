@@ -52,21 +52,20 @@ void ofApp::setup(){
     ofSetCircleResolution(200);
     
     ofSetFrameRate(frameRate);
-        
-//    ofSetBackgroundAuto(false);
-//    
+    
     screenScale = getRetinaScale();
     
     ofSetWindowShape(1024 * screenScale, 1024 * screenScale);
-//
-//    bufferWidth = ofGetWidth() * screenScale;
-//    bufferHeight = ofGetHeight() * screenScale;
-//
-//    drawBuffer.allocate(bufferWidth, bufferHeight);
-//    
-//    drawBuffer.begin();
-//    ofClear(0, 0, 0);
-//    drawBuffer.end();
+
+    bufferWidth = ofGetWidth() * screenScale;
+    bufferHeight = ofGetHeight() * screenScale;
+
+    drawBuffer.allocate(bufferWidth, bufferHeight);
+    
+    ofSetBackgroundAuto(false);
+    drawBuffer.begin();
+    ofClear(0, 0, 0);
+    drawBuffer.end();
 }
 
 //--------------------------------------------------------------
@@ -76,16 +75,17 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-//    drawBuffer.begin();
-//    ofTranslate(bufferWidth / 2, bufferHeight / 2);
-//    leafDrawer->visitAll();
-//    drawBuffer.end();
-//    
-//    drawBuffer.draw(0, 0);
+    drawBuffer.begin();
     ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
     ofScale(screenScale, screenScale);
-
-    drawer->visitAll();
+    leafDrawer->visitAll();
+    drawBuffer.end();
+    
+    drawBuffer.draw(0, 0);
+//    ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
+//    ofScale(screenScale, screenScale);
+//
+//    drawer->visitAll();
 }
 
 //--------------------------------------------------------------
