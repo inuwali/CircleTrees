@@ -33,8 +33,7 @@ void ofApp::setup(){
     
     animator = new TreeAnimator(tree);
         
-    TreeAnimatorInstaller animatorInstaller = TreeAnimatorInstaller(tree);
-    NodeAnimator *nodeAnimator =
+    NodeAnimator *nodeAnimator1 =
     new NodeAnimator(
                      NodeAnimatorFunctions(nullptr,
                                            nullptr,
@@ -43,8 +42,40 @@ void ofApp::setup(){
                                            [](float v, float d) -> float { return 0.1 + cosf(d) * 0.1; }
                                            )
                      );
+
+    NodeAnimator *nodeAnimator2 =
+    new NodeAnimator(
+                     NodeAnimatorFunctions(nullptr,
+                                           nullptr,
+                                           [](float v, float d) -> float { return v - 0.5; },
+                                           [](float v, float d) -> float { return 0.3 + sinf(d) * 0.1; },
+                                           [](float v, float d) -> float { return 0.3 + cosf(d) * 0.1; }
+                                           )
+                     );
+
+    NodeAnimator *nodeAnimator3 =
+    new NodeAnimator(
+                     NodeAnimatorFunctions(nullptr,
+                                           nullptr,
+                                           [](float v, float d) -> float { return v + 2; },
+                                           [](float v, float d) -> float { return 0.5 + sinf(d) * 0.1; },
+                                           [](float v, float d) -> float { return 0.2 + cosf(d) * 0.3; }
+                                           )
+                     );
+
+    AnimatorChooser chooser = [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+        if (node->children.empty()) {
+            return animators[2];
+        } else {
+            return animators[depth % 3];
+        }
+    };
     
-    animatorInstaller.visitAll(nodeAnimator);
+    TreeAnimatorInstaller animatorInstaller = TreeAnimatorInstaller(tree,
+                                                                    {nodeAnimator1, nodeAnimator2, nodeAnimator3},
+                                                                    chooser);
+
+    animatorInstaller.visitAll(nullptr);
     
     ofSetColor(200,200,220,150);
     ofFill();
@@ -60,12 +91,14 @@ void ofApp::setup(){
     bufferWidth = ofGetWidth() * screenScale;
     bufferHeight = ofGetHeight() * screenScale;
 
-    drawBuffer.allocate(bufferWidth, bufferHeight);
-    
-    ofSetBackgroundAuto(false);
-    drawBuffer.begin();
-    ofClear(0, 0, 0);
-    drawBuffer.end();
+    // COMMENT OUT IF YOU WANT CIRCLES 👇🏻
+//    drawBuffer.allocate(bufferWidth, bufferHeight);
+//    
+//    ofSetBackgroundAuto(false);
+//    drawBuffer.begin();
+//    ofClear(0, 0, 0);
+//    drawBuffer.end();
+    // COMMENT OUT IF YOU WANT CIRCLES ☝🏻
 }
 
 //--------------------------------------------------------------
@@ -75,17 +108,22 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-    drawBuffer.begin();
-    ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
-    ofScale(screenScale, screenScale);
-    leafDrawer->visitAll();
-    drawBuffer.end();
-    
-    drawBuffer.draw(0, 0);
+    // Leaves 👇🏻
+//    drawBuffer.begin();
 //    ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
 //    ofScale(screenScale, screenScale);
-//
-//    drawer->visitAll();
+//    leafDrawer->visitAll();
+//    drawBuffer.end();
+//    
+//    drawBuffer.draw(0, 0);
+    // Leaves ☝🏻
+    
+    // Circles 👇🏻
+    ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
+    ofScale(screenScale, screenScale);
+
+    drawer->visitAll();
+    // Circles ☝🏻
 }
 
 //--------------------------------------------------------------

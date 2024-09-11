@@ -206,9 +206,17 @@ public:
     }
 };
 
+typedef NodeAnimator* (*AnimatorChooser)(TreeNode *, int, std::vector<NodeAnimator *>);
+
 class TreeAnimatorInstaller: public TreeVisitor<NodeAnimator *> {
+    std::vector<NodeAnimator *> animators;
+    AnimatorChooser animatorChooser;
+    
 public:
-    TreeAnimatorInstaller(Tree *tree): TreeVisitor(tree) {
+    TreeAnimatorInstaller(Tree *tree,
+                          std::vector<NodeAnimator *> animators,
+                          AnimatorChooser chooser):
+    TreeVisitor(tree), animators(animators), animatorChooser(chooser) {
     }
     
     void preVisit(TreeNode *node, int currentDepth, NodeAnimator *animator) {
@@ -216,7 +224,7 @@ public:
     
     void visitNode(TreeNode *node, int currentDepth, NodeAnimator *animator) {
         if (currentDepth != 0) {
-            node->animator = animator;
+            node->animator = animatorChooser(node, currentDepth, animators);
         }
     }
     
