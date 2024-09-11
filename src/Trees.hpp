@@ -61,6 +61,16 @@ class TreeNode {
     NodeAnimator *animator;
     
     TreeNode(BranchParameters parameters);
+    
+    int inverseDepth() {
+        int result = 0;
+        TreeNode *node = this;
+        while (!node->children.empty()) {
+            result++;
+            node = node->children[0];
+        }
+        return result;
+    }
 };
 
 class Tree {
@@ -87,27 +97,31 @@ struct RenderedTree {
     
 };
 
-template <typename Data>
+template <typename Data, typename UpData>
 class TreeVisitor {
 public:
     Tree *tree;
     
     TreeVisitor(Tree *tree): tree(tree) {}
     
-    void visitAll(Data initialData) {
-        visitHelper(tree->root, 0, initialData);
+    void visitAll(Data initialData, UpData initialUpData) {
+        visitHelper(tree->root, 0, initialData, initialUpData);
     }
         
-    void visitHelper(TreeNode *node, int currentDepth, Data data) {
+    UpData visitHelper(TreeNode *node, int currentDepth, Data data, UpData upData) {
         visitNode(node, currentDepth, data);
         
         Data newData = modifyData(currentDepth, node, data);
+        UpData reducedData = modifyUpData(currentDepth, node, upData);
         
         for (TreeNode *child: node->children) {
             preVisit(child, currentDepth + 1, newData);
-            visitHelper(child, currentDepth + 1, newData);
+            reducedData = reduceUpData(visitHelper(child, currentDepth + 1, newData, reducedData), reducedData);
+            visitNodeUp(node, currentDepth + 1, newData, reducedData);
             postVisit(child, currentDepth + 1, newData);
         }
+        
+        return reducedData;
     }
     
     virtual void preVisit(TreeNode *node, int currentDepth, Data data) {
@@ -116,21 +130,32 @@ public:
     virtual void visitNode(TreeNode *node, int currentDepth, Data data) {
     }
     
+    virtual void visitNodeUp(TreeNode *node, int currentDepth, Data data, UpData upData) {
+    }
+    
     virtual void postVisit(TreeNode *node, int currentDepth, Data data) {
     }
     
     virtual Data modifyData(int currentDepth, TreeNode *node, Data data) {
         return data;
     }
+    
+    virtual UpData modifyUpData(int currentDepth, TreeNode *node, UpData data) {
+        return data;
+    }
+    
+    virtual UpData reduceUpData(UpData a, UpData b) {
+        return a;
+    }
 };
 
-class CircleTreeDrawer: public TreeVisitor<bool> {
+class CircleTreeDrawer: public TreeVisitor<bool, bool> {
 public:
     CircleTreeDrawer(Tree *tree): TreeVisitor(tree) {
     }
     
     void visitAll() {
-        TreeVisitor::visitAll(true);
+        TreeVisitor::visitAll(true, true);
     }
     
     void preVisit(TreeNode *node, int currentDepth, bool data) {
@@ -151,13 +176,13 @@ public:
     }
 };
 
-class LeafTreeDrawer: public TreeVisitor<float> {
+class LeafTreeDrawer: public TreeVisitor<float, int> {
 public:
     LeafTreeDrawer(Tree *tree): TreeVisitor(tree) {
     }
     
     void visitAll() {
-        TreeVisitor::visitAll(1);
+        TreeVisitor::visitAll(1, 0);
     }
     
     void preVisit(TreeNode *node, int currentDepth, float currentScale) {
@@ -170,25 +195,46 @@ public:
     }
     
     void visitNode(TreeNode *node, int currentDepth, float currentScale) {
-        if (node->children.size() == 0) {
-            ofPushMatrix();
-            ofScale(1.0/currentScale);
-            ofDrawLine(0, 0, 1, 1);
-            ofPopMatrix();
+//        if (node->children.size() == 0) {
+//            ofPushMatrix();
+//            ofScale(1.0/currentScale);
+//            ofDrawLine(0, 0, 1, 1);
+//            ofPopMatrix();
+//        }
+    }
+    
+    void visitNodeUp(TreeNode *node, int currentDepth, float currentScale, int maxDepth) {
+        if (maxDepth - currentDepth == 1) {
+            ofSetColor(255, 0, 0);
+        } else {
+            ofSetColor(200,200,220,200);
         }
+        
+        ofPushMatrix();
+        ofScale(1.0/currentScale);
+        ofDrawLine(0, 0, 1, 1);
+        ofPopMatrix();
     }
     
     void postVisit(TreeNode *node, int currentDepth, float currentScale) {
         ofPopMatrix();
     }
     
-    float modifyData(int currentDepth, TreeNode *node, float data) {
-        return data * node->parameters.size;
+    float modifyData(int currentDepth, TreeNode *node, float currentScale) {
+        return currentScale * node->parameters.size;
+    }
+    
+    int modifyUpData(int currentDepth, TreeNode *node, int upData) {
+        return upData + 1;
+    }
+    
+    int reduceUpData(int a, int b) {
+        return max(a, b);
     }
 };
 
 
-class TreeAnimator: public TreeVisitor<float> {
+class TreeAnimator: public TreeVisitor<float, bool> {
 public:
     TreeAnimator(Tree *tree): TreeVisitor(tree) {
     }
@@ -208,7 +254,7 @@ public:
 
 typedef NodeAnimator* (*AnimatorChooser)(TreeNode *, int, std::vector<NodeAnimator *>);
 
-class TreeAnimatorInstaller: public TreeVisitor<NodeAnimator *> {
+class TreeAnimatorInstaller: public TreeVisitor<bool, bool> {
     std::vector<NodeAnimator *> animators;
     AnimatorChooser animatorChooser;
     
@@ -219,16 +265,20 @@ public:
     TreeVisitor(tree), animators(animators), animatorChooser(chooser) {
     }
     
-    void preVisit(TreeNode *node, int currentDepth, NodeAnimator *animator) {
+    void visitAll() {
+        TreeVisitor::visitAll(true, true);
     }
     
-    void visitNode(TreeNode *node, int currentDepth, NodeAnimator *animator) {
+    void preVisit(TreeNode *node, int currentDepth, bool data) {
+    }
+    
+    void visitNode(TreeNode *node, int currentDepth, bool data) {
         if (currentDepth != 0) {
             node->animator = animatorChooser(node, currentDepth, animators);
         }
     }
     
-    void postVisit(TreeNode *node, int currentDepth, NodeAnimator *animator) {
+    void postVisit(TreeNode *node, int currentDepth, bool data) {
     }
 };
 

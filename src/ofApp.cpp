@@ -7,7 +7,7 @@ Tree *tree;
 CircleTreeDrawer *drawer;
 LeafTreeDrawer *leafDrawer;
 TreeAnimator *animator;
-int frameRate = 60;
+int frameRate = 120;
 
 ofFbo drawBuffer;
 
@@ -25,7 +25,7 @@ int screenScale;
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-    TreeGenerator generator = TreeGenerator(5, 200);
+    TreeGenerator generator = TreeGenerator(4, 200);
     tree = generator.generateTree();
     
     drawer = new CircleTreeDrawer(tree);
@@ -76,7 +76,7 @@ void ofApp::setup(){
                                                                     {nodeAnimator1, nodeAnimator2, nodeAnimator3},
                                                                     chooser);
 
-    animatorInstaller.visitAll(nullptr);
+    animatorInstaller.visitAll();
     
     ofSetColor(200,200,220,200);
     ofFill();
@@ -104,7 +104,7 @@ void ofApp::setup(){
 
 //--------------------------------------------------------------
 void ofApp::update(){
-    animator->visitAll(ofGetFrameNum() / (float)frameRate);
+    animator->visitAll(ofGetFrameNum() / (float)frameRate, true);
 }
 
 //--------------------------------------------------------------
