@@ -11,10 +11,10 @@
 float animConstant(float v, float d) { return v; }
 
 BranchParameters::BranchParameters():
-aspect(0),
+aspect(1),
 branchAngle(0),
 terminusAngle(0),
-size(0),
+size(1),
 offset(0)
 {}
 

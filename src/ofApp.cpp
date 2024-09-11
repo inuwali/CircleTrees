@@ -5,8 +5,22 @@
 
 Tree *tree;
 CircleTreeDrawer *drawer;
-CircleTreeAnimator *animator;
-int frameRate = 60;
+LeafTreeDrawer *leafDrawer;
+TreeAnimator *animator;
+int frameRate = 120;
+
+ofFbo drawBuffer;
+
+int getRetinaScale() {
+    auto window = dynamic_cast<ofAppGLFWWindow*>(ofGetWindowPtr());
+    if (window) {
+        return window->getPixelScreenCoordScale();
+    }
+    return 1;  // Default to 1.0 if no retina display
+}
+
+int bufferWidth;
+int bufferHeight;
 
 //--------------------------------------------------------------
 void ofApp::setup(){
@@ -14,10 +28,11 @@ void ofApp::setup(){
     tree = generator.generateTree();
     
     drawer = new CircleTreeDrawer(tree);
+    leafDrawer = new LeafTreeDrawer(tree);
     
-    animator = new CircleTreeAnimator(tree);
+    animator = new TreeAnimator(tree);
         
-    CircleTreeAnimatorInstaller animatorInstaller = CircleTreeAnimatorInstaller(tree);
+    TreeAnimatorInstaller animatorInstaller = TreeAnimatorInstaller(tree);
     NodeAnimator *nodeAnimator =
     new NodeAnimator(
                      NodeAnimatorFunctions(nullptr,
@@ -30,14 +45,28 @@ void ofApp::setup(){
     
     animatorInstaller.visitAll(nodeAnimator);
     
-    ofSetColor(200,200,220);
+    ofSetColor(200,200,220,150);
     ofFill();
     
-    ofEnableBlendMode(OF_BLENDMODE_SCREEN);
+//    ofEnableBlendMode(OF_BLENDMODE_SCREEN);
     
     ofSetCircleResolution(200);
     
     ofSetFrameRate(frameRate);
+    
+    ofSetBackgroundAuto(false);
+    
+    int scale = getRetinaScale();
+    
+    bufferWidth = ofGetWidth() * scale;
+    bufferHeight = ofGetHeight() * scale;
+    
+    drawBuffer.allocate(bufferWidth, bufferHeight);
+    
+    drawBuffer.begin();
+//    ofEnableBlendMode(OF_BLENDMODE_SCREEN);
+    ofClear(0, 0, 0);
+    drawBuffer.end();
 }
 
 //--------------------------------------------------------------
@@ -47,9 +76,19 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-    ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
+    drawBuffer.begin();
+//    ofDisableBlendMode();
+//    ofClear(0, 0, 0);
+
+    ofSetCircleResolution(200);
+//    ofEnableBlendMode(OF_BLENDMODE_SCREEN);
+    ofTranslate(bufferWidth / 2, bufferHeight / 2);
     
-    drawer->visitAll();
+    leafDrawer->visitAll();
+//    drawer->visitAll();
+    drawBuffer.end();
+    
+    drawBuffer.draw(0, 0);
 }
 
 //--------------------------------------------------------------

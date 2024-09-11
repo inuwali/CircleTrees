@@ -72,6 +72,21 @@ public:
     Tree(float size, TreeNode *root);
 };
 
+struct RenderedTreeNode {
+public:
+    float x;
+    float y;
+    float size;
+    std::vector<RenderedTreeNode> children;
+
+    RenderedTreeNode(float x, float y, float size): x(x), y(y), size(size), children(std::vector<RenderedTreeNode>()) {}
+};
+
+struct RenderedTree {
+    RenderedTreeNode root;
+    
+};
+
 template <typename Data>
 class TreeVisitor {
 public:
@@ -80,15 +95,13 @@ public:
     TreeVisitor(Tree *tree): tree(tree) {}
     
     void visitAll(Data initialData) {
-//        cout << "TreeVisitor::visitAll() tree: " << tree << "\n";
-//        cout << "TreeVisitor::visitAll() tree ROOT CHILD COUNT: " << tree->root->children.size() << "\n";
         visitHelper(tree->root, 0, initialData);
     }
         
     void visitHelper(TreeNode *node, int currentDepth, Data data) {
         visitNode(node, currentDepth, data);
         
-        Data newData = modifyData(currentDepth, data);
+        Data newData = modifyData(currentDepth, node, data);
         
         for (TreeNode *child: node->children) {
             preVisit(child, currentDepth + 1, newData);
@@ -106,7 +119,7 @@ public:
     virtual void postVisit(TreeNode *node, int currentDepth, Data data) {
     }
     
-    virtual Data modifyData(int currentDepth, Data data) {
+    virtual Data modifyData(int currentDepth, TreeNode *node, Data data) {
         return data;
     }
 };
@@ -123,7 +136,6 @@ public:
     void preVisit(TreeNode *node, int currentDepth, bool data) {
         ofPushMatrix();
         
-        //print("Applying params: " + node.parameters.terminusAngle + ", " + node.parameters.offset + ", " + node.parameters.size + ", " + node.parameters.branchAngle + "\n");
         ofRotateDeg(node->parameters.terminusAngle);
         ofTranslate(0, -tree->size/2 - node->parameters.offset * tree->size / 2);
         ofScale(node->parameters.size);
@@ -139,9 +151,46 @@ public:
     }
 };
 
-class CircleTreeAnimator: public TreeVisitor<float> {
+class LeafTreeDrawer: public TreeVisitor<float> {
 public:
-    CircleTreeAnimator(Tree *tree): TreeVisitor(tree) {
+    LeafTreeDrawer(Tree *tree): TreeVisitor(tree) {
+    }
+    
+    void visitAll() {
+        TreeVisitor::visitAll(1);
+    }
+    
+    void preVisit(TreeNode *node, int currentDepth, float currentScale) {
+        ofPushMatrix();
+        
+        ofRotateDeg(node->parameters.terminusAngle);
+        ofTranslate(0, -tree->size/2 - node->parameters.offset * tree->size / 2);
+        ofScale(node->parameters.size);
+        ofRotateDeg(node->parameters.branchAngle);
+    }
+    
+    void visitNode(TreeNode *node, int currentDepth, float currentScale) {
+        if (node->children.size() == 0) {
+            ofPushMatrix();
+            ofScale(1.0/currentScale);
+            ofDrawLine(0, 0, 1, 1);
+            ofPopMatrix();
+        }
+    }
+    
+    void postVisit(TreeNode *node, int currentDepth, float currentScale) {
+        ofPopMatrix();
+    }
+    
+    float modifyData(int currentDepth, TreeNode *node, float data) {
+        return data * node->parameters.size;
+    }
+};
+
+
+class TreeAnimator: public TreeVisitor<float> {
+public:
+    TreeAnimator(Tree *tree): TreeVisitor(tree) {
     }
     
     void preVisit(TreeNode *node, int currentDepth, float dt) {
@@ -157,9 +206,9 @@ public:
     }
 };
 
-class CircleTreeAnimatorInstaller: public TreeVisitor<NodeAnimator *> {
+class TreeAnimatorInstaller: public TreeVisitor<NodeAnimator *> {
 public:
-    CircleTreeAnimatorInstaller(Tree *tree): TreeVisitor(tree) {
+    TreeAnimatorInstaller(Tree *tree): TreeVisitor(tree) {
     }
     
     void preVisit(TreeNode *node, int currentDepth, NodeAnimator *animator) {
