@@ -64,11 +64,12 @@ void ofApp::setup(){
                      );
 
     AnimatorChooser chooser = [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
-        if (node->children.empty()) {
-            return animators[2];
-        } else {
-            return animators[depth % 3];
-        }
+//        if (node->children.empty()) {
+//            return animators[2];
+//        } else {
+//            return animators[depth % 3];
+//        }
+        return animators[random() % 3];
     };
     
     TreeAnimatorInstaller animatorInstaller = TreeAnimatorInstaller(tree,
@@ -77,7 +78,7 @@ void ofApp::setup(){
 
     animatorInstaller.visitAll(nullptr);
     
-    ofSetColor(200,200,220,150);
+    ofSetColor(200,200,220,200);
     ofFill();
     
     ofSetCircleResolution(200);
@@ -92,12 +93,12 @@ void ofApp::setup(){
     bufferHeight = ofGetHeight() * screenScale;
 
     // COMMENT OUT IF YOU WANT CIRCLES 👇🏻
-//    drawBuffer.allocate(bufferWidth, bufferHeight);
-//    
-//    ofSetBackgroundAuto(false);
-//    drawBuffer.begin();
-//    ofClear(0, 0, 0);
-//    drawBuffer.end();
+    drawBuffer.allocate(bufferWidth, bufferHeight);
+    
+    ofSetBackgroundAuto(false);
+    drawBuffer.begin();
+    ofClear(0, 0, 0);
+    drawBuffer.end();
     // COMMENT OUT IF YOU WANT CIRCLES ☝🏻
 }
 
@@ -109,20 +110,20 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     // Leaves 👇🏻
-//    drawBuffer.begin();
-//    ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
-//    ofScale(screenScale, screenScale);
-//    leafDrawer->visitAll();
-//    drawBuffer.end();
-//    
-//    drawBuffer.draw(0, 0);
+    drawBuffer.begin();
+    ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
+    ofScale(screenScale, screenScale);
+    leafDrawer->visitAll();
+    drawBuffer.end();
+    
+    drawBuffer.draw(0, 0);
     // Leaves ☝🏻
     
     // Circles 👇🏻
-    ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
-    ofScale(screenScale, screenScale);
-
-    drawer->visitAll();
+//    ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
+//    ofScale(screenScale, screenScale);
+//
+//    drawer->visitAll();
     // Circles ☝🏻
 }
 
