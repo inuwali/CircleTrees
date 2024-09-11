@@ -125,7 +125,7 @@ public:
         
         //print("Applying params: " + node.parameters.terminusAngle + ", " + node.parameters.offset + ", " + node.parameters.size + ", " + node.parameters.branchAngle + "\n");
         ofRotateDeg(node->parameters.terminusAngle);
-        ofTranslate(0, -tree->size/2 + node->parameters.offset * tree->size / 2);
+        ofTranslate(0, -tree->size/2 - node->parameters.offset * tree->size / 2);
         ofScale(node->parameters.size);
         ofRotateDeg(node->parameters.branchAngle);
     }
@@ -199,7 +199,8 @@ public:
                 }
             } else {
                 for (int i = 1; i < 4; i++) {
-                    node->children.push_back(generateHelper(remainingDepth - 1, BranchParameters(1, 0, (float)i * 360.0 / 6.0, scale, 0), false));
+                    float a = (float)i * 360.0 / 6.0 - 360.0 / 3.0;
+                    node->children.push_back(generateHelper(remainingDepth - 1, BranchParameters(1, 0, a, scale, 0), false));
                 }
             }
         }
