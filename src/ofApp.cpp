@@ -25,6 +25,11 @@ int screenScale;
 
 //--------------------------------------------------------------
 void ofApp::setup(){
+    ofSeedRandom();
+    
+    screenScale = getRetinaScale();
+    ofSetWindowShape(2048 * screenScale, 1024 * screenScale);
+
     TreeGenerator generator = TreeGenerator(4, 200);
     tree = generator.generateTree();
     
@@ -37,7 +42,7 @@ void ofApp::setup(){
     new NodeAnimator(
                      NodeAnimatorFunctions(nullptr,
                                            nullptr,
-                                           [](float v, float d) -> float { return v + 1; },
+                                           [](float v, float d) -> float { return v + 0.5; },
                                            [](float v, float d) -> float { return 0.4 + sinf(d) * 0.1; },
                                            [](float v, float d) -> float { return 0.1 + cosf(d) * 0.1; }
                                            )
@@ -47,9 +52,9 @@ void ofApp::setup(){
     new NodeAnimator(
                      NodeAnimatorFunctions(nullptr,
                                            nullptr,
-                                           [](float v, float d) -> float { return v - 0.5; },
-                                           [](float v, float d) -> float { return 0.3 + sinf(d) * 0.1; },
-                                           [](float v, float d) -> float { return 0.3 + cosf(d) * 0.1; }
+                                           [](float v, float d) -> float { return v - 1; },
+                                           [](float v, float d) -> float { return 0.3 + sinf(d/2) * 0.1; },
+                                           [](float v, float d) -> float { return -0.3 + cosf(d*3) * 0.6; }
                                            )
                      );
 
@@ -58,18 +63,19 @@ void ofApp::setup(){
                      NodeAnimatorFunctions(nullptr,
                                            nullptr,
                                            [](float v, float d) -> float { return v + 2; },
-                                           [](float v, float d) -> float { return 0.5 + sinf(d) * 0.1; },
-                                           [](float v, float d) -> float { return 0.2 + cosf(d) * 0.3; }
+                                           [](float v, float d) -> float { return 0.5 + sinf(v) * 0.1; },
+                                           [](float v, float d) -> float { return 0.2 + cosf(d*10) * 0.3; }
                                            )
                      );
 
+    
     AnimatorChooser chooser = [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
 //        if (node->children.empty()) {
 //            return animators[2];
 //        } else {
 //            return animators[depth % 3];
 //        }
-        return animators[random() % 3];
+        return animators[ofRandom(3)];
     };
     
     TreeAnimatorInstaller animatorInstaller = TreeAnimatorInstaller(tree,
@@ -84,18 +90,14 @@ void ofApp::setup(){
     ofSetCircleResolution(200);
     
     ofSetFrameRate(frameRate);
-    
-    screenScale = getRetinaScale();
-    
-    ofSetWindowShape(1024 * screenScale, 1024 * screenScale);
-
+        
     bufferWidth = ofGetWidth() * screenScale;
     bufferHeight = ofGetHeight() * screenScale;
 
     // COMMENT OUT IF YOU WANT CIRCLES 👇🏻
     drawBuffer.allocate(bufferWidth, bufferHeight);
     
-    ofSetBackgroundAuto(false);
+//    ofSetBackgroundAuto(false);
     drawBuffer.begin();
     ofClear(0, 0, 0);
     drawBuffer.end();
@@ -111,7 +113,7 @@ void ofApp::update(){
 void ofApp::draw(){
     // Leaves 👇🏻
     drawBuffer.begin();
-    ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
+    ofTranslate(ofGetWidth() / 4, ofGetHeight() / 2);
     ofScale(screenScale, screenScale);
     leafDrawer->visitAll();
     drawBuffer.end();
@@ -120,10 +122,10 @@ void ofApp::draw(){
     // Leaves ☝🏻
     
     // Circles 👇🏻
-//    ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
-//    ofScale(screenScale, screenScale);
-//
-//    drawer->visitAll();
+    ofTranslate(ofGetWidth() / 4 * 3, ofGetHeight() / 2);
+    ofScale(screenScale, screenScale);
+
+    drawer->visitAll();
     // Circles ☝🏻
 }
 

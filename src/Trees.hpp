@@ -112,11 +112,12 @@ public:
         visitNode(node, currentDepth, data);
         
         Data newData = modifyData(currentDepth, node, data);
-        UpData reducedData = modifyUpData(currentDepth, node, upData);
+        UpData newUpData = modifyUpData(currentDepth, node, upData);
+        UpData reducedData = newUpData;
         
         for (TreeNode *child: node->children) {
             preVisit(child, currentDepth + 1, newData);
-            reducedData = reduceUpData(visitHelper(child, currentDepth + 1, newData, reducedData), reducedData);
+            reducedData = reduceUpData(visitHelper(child, currentDepth + 1, newData, newUpData), reducedData);
             visitNodeUp(node, currentDepth + 1, newData, reducedData);
             postVisit(child, currentDepth + 1, newData);
         }
@@ -182,7 +183,7 @@ public:
     }
     
     void visitAll() {
-        TreeVisitor::visitAll(1, 0);
+        TreeVisitor::visitAll(1, -1);
     }
     
     void preVisit(TreeNode *node, int currentDepth, float currentScale) {
@@ -204,15 +205,22 @@ public:
     }
     
     void visitNodeUp(TreeNode *node, int currentDepth, float currentScale, int maxDepth) {
-        if (maxDepth - currentDepth == 1) {
-            ofSetColor(255, 0, 0);
+//        cout << node->inverseDepth() << ":" << currentDepth << ":" << maxDepth << "\n";
+        
+        if (maxDepth - currentDepth == 0) {
+            ofSetColor(255, 200, 200, 200);
+        } else if (maxDepth - currentDepth == 1) {
+            ofSetColor(255, 200, 0, 220);
+        } else if (maxDepth - currentDepth == 2) {
+            ofSetColor(255, 0, 0, 240);
         } else {
-            ofSetColor(200,200,220,200);
+            ofSetColor(255, 120, 100);
         }
         
         ofPushMatrix();
         ofScale(1.0/currentScale);
         ofDrawLine(0, 0, 1, 1);
+//        ofDrawCircle(0, 0, 10, 10);
         ofPopMatrix();
     }
     
