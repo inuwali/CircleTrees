@@ -48,8 +48,6 @@ void ofApp::setup(){
     ofSetColor(200,200,220,150);
     ofFill();
     
-//    ofEnableBlendMode(OF_BLENDMODE_SCREEN);
-    
     ofSetCircleResolution(200);
     
     ofSetFrameRate(frameRate);
@@ -64,7 +62,6 @@ void ofApp::setup(){
     drawBuffer.allocate(bufferWidth, bufferHeight);
     
     drawBuffer.begin();
-//    ofEnableBlendMode(OF_BLENDMODE_SCREEN);
     ofClear(0, 0, 0);
     drawBuffer.end();
 }
@@ -77,15 +74,8 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     drawBuffer.begin();
-//    ofDisableBlendMode();
-//    ofClear(0, 0, 0);
-
-    ofSetCircleResolution(200);
-//    ofEnableBlendMode(OF_BLENDMODE_SCREEN);
     ofTranslate(bufferWidth / 2, bufferHeight / 2);
-    
     leafDrawer->visitAll();
-//    drawer->visitAll();
     drawBuffer.end();
     
     drawBuffer.draw(0, 0);
