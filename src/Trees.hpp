@@ -208,20 +208,22 @@ public:
 //        cout << node->inverseDepth() << ":" << currentDepth << ":" << maxDepth << "\n";
         
         if (maxDepth - currentDepth == 0) {
-            ofSetColor(255, 200, 200, 200);
+            ofSetColor(50, 80, 220, 150);
         } else if (maxDepth - currentDepth == 1) {
-            ofSetColor(255, 200, 0, 220);
+            ofSetColor(255, 200, 0, 200);
         } else if (maxDepth - currentDepth == 2) {
-            ofSetColor(255, 0, 0, 240);
+            ofSetColor(255, 0, 0);
         } else {
-            ofSetColor(255, 120, 100);
+            ofSetColor(255, 200, 200, 100);
         }
         
-        ofPushMatrix();
-        ofScale(1.0/currentScale);
-        ofDrawLine(0, 0, 1, 1);
-//        ofDrawCircle(0, 0, 10, 10);
-        ofPopMatrix();
+//        if (maxDepth - currentDepth < 1) {
+            ofPushMatrix();
+            ofScale(1.0/currentScale);
+            ofDrawLine(0, 0, 1, 1);
+            //        ofDrawCircle(0, 0, 10, 10);
+            ofPopMatrix();
+//        }
     }
     
     void postVisit(TreeNode *node, int currentDepth, float currentScale) {
