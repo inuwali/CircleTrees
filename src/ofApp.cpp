@@ -27,14 +27,14 @@ int windowHeight;
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-    ofSeedRandom();
+    ofSetRandomSeed(ofGetSystemTimeMillis());
     
     windowWidth = 1500;
     windowHeight = 1000;
     screenScale = getRetinaScale();
     ofSetWindowShape(windowWidth * screenScale, windowHeight * screenScale);
 
-    TreeGenerator generator = TreeGenerator(5, windowHeight / 6);
+    TreeGenerator generator = TreeGenerator(4, windowHeight / 6);
     tree = generator.generateTree();
     
     drawer = new CircleTreeDrawer(tree);
@@ -46,9 +46,9 @@ void ofApp::setup(){
     new NodeAnimator(
                      NodeAnimatorFunctions(nullptr,
                                            nullptr,
-                                           [](float v, float d) -> float { return v + 0.1; },
+                                           [](float v, float d) -> float { return sin(d/2+v/100) * 90 - 45; },
                                            [](float v, float d) -> float { return 0.4 + sinf(d) * 0.1; },
-                                           [](float v, float d) -> float { return 0.1 + cosf(d/2) * 0.1; }
+                                           [](float v, float d) -> float { return 0.1 + cosf(d/20) * 0.1; }
                                            )
                      );
 
@@ -56,9 +56,9 @@ void ofApp::setup(){
     new NodeAnimator(
                      NodeAnimatorFunctions(nullptr,
                                            nullptr,
-                                           [](float v, float d) -> float { return v - 0.4; },
+                                           [](float v, float d) -> float { return cos(d/5+v/50) * 30 - 15; },
                                            [](float v, float d) -> float { return 0.3 + sinf(d/2) * 0.1; },
-                                           [](float v, float d) -> float { return 0 + cosf(d*3) * 0.3; }
+                                           [](float v, float d) -> float { return 0 + cosf(d/30) * 0.3; }
                                            )
                      );
 
@@ -66,9 +66,9 @@ void ofApp::setup(){
     new NodeAnimator(
                      NodeAnimatorFunctions(nullptr,
                                            nullptr,
-                                           [](float v, float d) -> float { return v + 0.5; },
+                                           [](float v, float d) -> float { return sin(d+v/320) * 180 - 90; },
                                            [](float v, float d) -> float { return 0.5 + sinf(sqrt(d)) * 0.1; },
-                                           [](float v, float d) -> float { return 0.2 + cosf(d*2) * 0.3; }
+                                           [](float v, float d) -> float { return 0.2 + cosf(d/10) * 0.3; }
                                            )
                      );
 
@@ -77,10 +77,20 @@ void ofApp::setup(){
 //        if (node->children.empty()) {
 //            return animators[2];
 //        } else {
-//            return animators[depth % 3];
+//            return animators[ofRandom(3)];
+////            return animators[depth % 3];
 //        }
-        return animators[ofRandom(3)];
-//        return animators[depth % 3];
+////        if (depth != 1) {
+//            return animators[ofRandom(3)];
+////        } else {
+////            return nullptr;
+////        }
+////        return animators[depth % 3];
+        if (depth == 2) {
+            return animators[ofRandom(3)];
+        } else {
+            return animators[depth % 3];
+        }
     };
     
     TreeAnimatorInstaller animatorInstaller = TreeAnimatorInstaller(tree,
@@ -89,12 +99,10 @@ void ofApp::setup(){
 
     animatorInstaller.visitAll();
     
-    ofSetColor(200,200,220,200);
-    ofFill();
-    ofBackground(0, 0, 0);
     
     ofSetCircleResolution(200);
-    
+//    ofEnableBlendMode(OF_BLENDMODE_SCREEN);
+
     ofSetFrameRate(frameRate);
         
     bufferWidth = ofGetWidth() * screenScale;
@@ -104,6 +112,12 @@ void ofApp::setup(){
     drawBuffer.begin();
     ofClear(0, 0, 0);
     drawBuffer.end();
+    
+//    ofSetColor(200,200,220,200);
+//        ofSetColor(255, 0, 0, 50);
+    ofFill();
+    ofBackground(255, 255, 255);
+
 }
 
 //--------------------------------------------------------------
@@ -124,6 +138,7 @@ void ofApp::draw(){
     // Leaves ☝🏻
     
     // Circles 👇🏻
+    ofSetColor(ofColor::fromHsb(128, 50, 200));
     ofTranslate(ofGetWidth() / 6 * 5, ofGetHeight() / 2);
     ofScale(screenScale / 2, screenScale / 2);
 
