@@ -73,6 +73,57 @@ void ofApp::setup(){
                      );
 
     
+    std::vector<NodeAnimator *> allAnimators = {
+        new NodeAnimator(
+                         NodeAnimatorFunctions(nullptr,
+                                               nullptr,
+                                               [](float v, float d) -> float { return sin(d/2+v/100) * 90 - 45; },
+                                               [](float v, float d) -> float { return 0.4 + sinf(d) * 0.1; },
+                                               [](float v, float d) -> float { return 0.1 + cosf(d/20) * 0.1; }
+                                               )
+                         ),
+        new NodeAnimator(
+                         NodeAnimatorFunctions(nullptr,
+                                               nullptr,
+                                               [](float v, float d) -> float { return cos(d/5+v/50) * 30 - 15; },
+                                               [](float v, float d) -> float { return 0.3 + sinf(d/2) * 0.1; },
+                                               [](float v, float d) -> float { return 0 + cosf(d/30) * 0.3; }
+                                               )
+                         ),
+        new NodeAnimator(
+                         NodeAnimatorFunctions(nullptr,
+                                               nullptr,
+                                               [](float v, float d) -> float { return sin(d+v/320) * 180 - 90; },
+                                               [](float v, float d) -> float { return 0.5 + sinf(sqrt(d)) * 0.1; },
+                                               [](float v, float d) -> float { return 0.2 + cosf(d/10) * 0.3; }
+                                               )
+                         ),
+        new NodeAnimator(
+                         NodeAnimatorFunctions(nullptr,
+                                               nullptr,
+                                               [](float v, float d) -> float { return v + 1; },
+                                               [](float v, float d) -> float { return 0.5 + sinf(d) * 0.1; },
+                                               [](float v, float d) -> float { return 0.2 + cosf(d/10) * 0.3; }
+                                               )
+                         ),
+        new NodeAnimator(
+                         NodeAnimatorFunctions(nullptr,
+                                               nullptr,
+                                               [](float v, float d) -> float { return v + 0.5; },
+                                               [](float v, float d) -> float { return 0.5 + sinf(d) * 0.1; },
+                                               [](float v, float d) -> float { return 0.2 + cosf(d/10) * 0.3; }
+                                               )
+                         ),
+        new NodeAnimator(
+                         NodeAnimatorFunctions(nullptr,
+                                               nullptr,
+                                               [](float v, float d) -> float { return v - 0.7; },
+                                               [](float v, float d) -> float { return 0.5 + sinf(d) * 0.1; },
+                                               [](float v, float d) -> float { return 0.2 + cosf(d/10) * 0.3; }
+                                               )
+                         ),
+    };
+    
     AnimatorChooser chooser = [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
 //        if (node->children.empty()) {
 //            return animators[2];
@@ -86,15 +137,17 @@ void ofApp::setup(){
 ////            return nullptr;
 ////        }
 ////        return animators[depth % 3];
-        if (depth == 2) {
-            return animators[ofRandom(3)];
-        } else {
-            return animators[depth % 3];
-        }
+//        if (depth == 2) {
+//            return animators[ofRandom(3)];
+//        } else {
+//            return animators[depth % 3];
+//        }
+//        return animators[depth %3 + 3];
+        return animators[3 + ofRandom(3)];
     };
     
     TreeAnimatorInstaller animatorInstaller = TreeAnimatorInstaller(tree,
-                                                                    {nodeAnimator1, nodeAnimator2, nodeAnimator3},
+                                                                    allAnimators,
                                                                     chooser);
 
     animatorInstaller.visitAll();
