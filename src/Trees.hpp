@@ -164,6 +164,63 @@ public:
     }
 };
 
+//template <typename Data, typename UpData>
+//class TreeVisitor2 {
+//public:
+//    Tree *tree;
+//    
+//    TreeVisitor2(Tree *tree): tree(tree) {}
+//    
+//    void visitAll(Data initialData, UpData initialUpData) {
+//        visitHelper(tree->root, 0, initialData, initialUpData);
+//    }
+//    
+//    UpData visitHelper(std::vector<TreeNode *> nodes, int currentDepth, Data data, UpData upData) {
+//        for (TreeNode *node: nodes) {
+//            preVisit(node, currentDepth, data);
+//            
+//        }
+//        visitNode(node, currentDepth, data);
+//        
+//        Data newData = modifyData(currentDepth, node, data);
+//        UpData newUpData = modifyUpData(currentDepth, node, upData);
+//        UpData reducedData = newUpData;
+//        
+//        for (TreeNode *child: node->children) {
+//            preVisit(child, currentDepth + 1, newData);
+//            reducedData = reduceUpData(visitHelper(child, currentDepth + 1, newData, newUpData), reducedData);
+//            visitNodeUp(node, currentDepth + 1, newData, reducedData);
+//            postVisit(child, currentDepth + 1, newData);
+//        }
+//        
+//        return reducedData;
+//    }
+//    
+//    virtual void preVisit(TreeNode *node, int currentDepth, Data data) {
+//    }
+//    
+//    virtual void visitNode(TreeNode *node, int currentDepth, Data data) {
+//    }
+//    
+//    virtual void visitNodeUp(TreeNode *node, int currentDepth, Data data, UpData upData) {
+//    }
+//    
+//    virtual void postVisit(TreeNode *node, int currentDepth, Data data) {
+//    }
+//    
+//    virtual Data modifyData(int currentDepth, TreeNode *node, Data data) {
+//        return data;
+//    }
+//    
+//    virtual UpData modifyUpData(int currentDepth, TreeNode *node, UpData data) {
+//        return data;
+//    }
+//    
+//    virtual UpData reduceUpData(UpData a, UpData b) {
+//        return a;
+//    }
+//};
+
 class CircleTreeDrawer: public TreeVisitor<bool, bool> {
 public:
     CircleTreeDrawer(Tree *tree): TreeVisitor(tree) {
@@ -335,43 +392,119 @@ public:
     }
 };
 
-class TreeRenderer: public TreeVisitor<RenderedTreeNode, RenderedTreeNode> {
-    RenderedTree *renderedTree;
-    
-    TreeRenderer(Tree *tree): TreeVisitor(tree), renderedTree(nullptr) {
-    }
-    
-//    void visitAll
-    
-    void preVisit(TreeNode *node, int currentDepth, int data) {
-        ofPushMatrix();
-        
-        ofRotateDeg(node->parameters.terminusAngle);
-        ofTranslate(0, -tree->size/2 - node->parameters.offset * tree->size / 2);
-        ofScale(node->parameters.size);
-        ofRotateDeg(node->parameters.branchAngle);
-    }
+//class TreeRenderer: public TreeVisitor<ofMatrix4x4, RenderedTree *> {
+//    RenderedTree *renderedTree;
+//    
+//    TreeRenderer(Tree *tree): TreeVisitor(tree), renderedTree(nullptr) {
+//    }
+//    
+//    void visitAll() {
+//        TreeVisitor::visitAll(ofMatrix4x4(), nullptr);
+//    }
+//    
+//    void preVisit(TreeNode *node, int currentDepth, ofMatrix4x4 currentMatrix) {
+//        
+//        
+//        ofRotateDeg(node->parameters.terminusAngle);
+//        ofTranslate(0, -tree->size/2 - node->parameters.offset * tree->size / 2);
+//        ofScale(node->parameters.size);
+//        ofRotateDeg(node->parameters.branchAngle);
+//    }
+//
+//    void visitNode(TreeNode *node, int currentDepth, ofMatrix4x4 currentMatrix) {
+//        ofVec4f point = ofVec4f(0, 0, 0, 1);
+//        point = currentMatrix * point;
+//        
+//        RenderedTreeNode renderedNode = RenderedTreeNode(ofPoint(point.x, point.y), currentMatrix.getScale().x, ofVec2f(0, 0), currentDepth, 0, 0, ofColor(255, 255, 255, 255));
+//        
+//        if (currentDepth == 0) {
+//            renderedTree = new RenderedTree(renderedNode);
+//        }
+//    }
+//    
+//    ofMatrix4x4 modifyData(int currentDepth, TreeNode *node, ofMatrix4x4 data) {
+//        data.rotate(node->parameters.terminusAngle, 0, 0, 1);
+//        data.translate(0, -tree->size/2 - node->parameters.offset * tree->size / 2, 0);
+//        data.scale(node->parameters.size, node->parameters.size, 1);
+//        data.rotate(node->parameters.branchAngle, 0, 0, 1);
+//        return data;
+//    }
+//    
+//    void visitNodeUp(TreeNode *node, int currentDepth, int data, RenderedTreeNode upData) {
+//        
+//    }
+//    
+//    void postVisit(TreeNode *node, int currentDepth, int data) {
+//        ofPopMatrix();
+//    }
+//};
 
-    void visitNode(TreeNode *node, int currentDepth, int data) {
-        ofMatrix4x4 matrix = ofMatrix4x4(ofGetCurrentMatrix(ofMatrixMode::OF_MATRIX_MODELVIEW));
-        ofVec4f point = ofVec4f(0, 0, 0, 1);
-        point = matrix * point;
+class TreeRenderer {
+public:
+    Tree *tree;
+    
+    TreeRenderer(Tree *tree): tree(tree) {
+    }
+    
+    RenderedTree render() {
+        return RenderedTree(renderSubtree(tree->root, ofMatrix4x4(), ofVec4f(0, 0, 0, 1), 0));
+    }
+    
+    RenderedTreeNode renderSubtree(TreeNode *node, ofMatrix4x4 currentMatrix, ofVec4f currentPoint, int currentDepth) {
+        if (currentDepth > 0) {
+            currentMatrix.rotate(node->parameters.terminusAngle, 0, 0, 1);
+            currentMatrix.translate(0, -tree->size/2 - node->parameters.offset * tree->size / 2, 0);
+            currentMatrix.scale(node->parameters.size, node->parameters.size, 1);
+            currentMatrix.rotate(node->parameters.branchAngle, 0, 0, 1);
+            
+            currentPoint = currentMatrix.preMult(currentPoint);
+        }
         
-        RenderedTreeNode renderedNode = RenderedTreeNode(ofPoint(point.x, point.y), matrix.getScale().x, ofVec2f(0, 0), currentDepth, 0, 0, ofColor(255, 255, 255, 255));
+        std::vector<RenderedTreeNode> children = std::vector<RenderedTreeNode>();
+        for (TreeNode *child: node->children) {
+            ofMatrix4x4 childMatrix = currentMatrix;
+            
+//            if (currentDepth > 0) {
+//                childMatrix.rotate(child->parameters.terminusAngle, 0, 0, 1);
+//                childMatrix.translate(0, -tree->size/2 - child->parameters.offset * tree->size / 2, 0);
+//                childMatrix.scale(child->parameters.size, child->parameters.size, 1);
+//                childMatrix.rotate(child->parameters.branchAngle, 0, 0, 1);
+//            }
+            children.push_back(renderSubtree(child, childMatrix, currentPoint, currentDepth + 1));
+        }
         
-        if (currentDepth == 0) {
-            renderedTree = new RenderedTree(renderedNode);
+//        ofVec4f point = ofVec4f(0, 0, 0, 1);
+//        point = currentMatrix.preMult(point);
+        
+        ofColor color = ofColor(0, 0, 0, 255);
+        switch (currentDepth) {
+            case 0: color = ofColor(255, 0, 0, 255); break;
+            case 1: color = ofColor(0, 255, 0, 255); break;
+            case 2: color = ofColor(0, 0, 255, 255); break;
+        }
+//        RenderedTreeNode renderedNode = RenderedTreeNode(ofPoint(point.x, point.y), currentMatrix.getScale().x, ofVec2f(0, 0), currentDepth, 0, 0, color);
+        RenderedTreeNode renderedNode = RenderedTreeNode(ofPoint(currentPoint.x, currentPoint.y), currentMatrix.getScale().x, ofVec2f(0, 0), currentDepth, 0, 0, color);
+        renderedNode.children = children;
+        
+        return renderedNode;
+    }
+};
+
+class RenderedTreeDrawer {
+public:
+    static void drawAsLines(RenderedTree tree) {
+        drawSubtree(tree.root, nullptr);
+    }
+    
+    static void drawSubtree(RenderedTreeNode node, RenderedTreeNode *parent) {
+        ofSetColor(node.color);
+        if (parent != nullptr) {
+            ofDrawLine(parent->position.x, parent->position.y, node.position.x, node.position.y);
+        }
+        for (RenderedTreeNode child: node.children) {
+            drawSubtree(child, &node);
         }
     }
-    
-    void visitNodeUp(TreeNode *node, int currentDepth, int data, RenderedTreeNode upData) {
-        
-    }
-    
-    void postVisit(TreeNode *node, int currentDepth, int data) {
-        ofPopMatrix();
-    }
-
 };
 
 class TreeAnimator: public TreeVisitor<float, bool> {
@@ -407,9 +540,9 @@ public:
     }
     
     void visitNode(TreeNode *node, int currentDepth, bool data) {
-//        if (currentDepth != 0) {
+        if (currentDepth != 0) {
             node->animator = animatorChooser(node, currentDepth, animators);
-//        }
+        }
     }
     
     void postVisit(TreeNode *node, int currentDepth, bool data) {
@@ -434,13 +567,17 @@ public:
         
         float scale = 0.4;
         if (remainingDepth > 0) {
+            float numChildren;
             if (initial) {
-                for (int i = 0; i < 8; i++) {
-                    node->children.push_back(generateHelper(remainingDepth - 1, BranchParameters(1, 0, (float)i * 360.0 / 8.0, scale, 0), false));
+                numChildren = 2;
+                for (int i = 0; i < numChildren; i++) {
+                    node->children.push_back(generateHelper(remainingDepth - 1, BranchParameters(1, 0, (float)i * 360.0 / numChildren, scale, 0), false));
                 }
             } else {
-                for (int i = 1; i <= 4; i++) {
-                    float a = (float)i * 360.0 / ((float)remainingDepth * 2) - 360.0 / (float)remainingDepth;
+//                numChildren = (float)remainingDepth;
+                numChildren = 2;
+                for (int i = 1; i <= numChildren; i++) {
+                    float a = (float)i * 360.0 / (numChildren * 2) - 360.0 / numChildren;
                     node->children.push_back(generateHelper(remainingDepth - 1, BranchParameters(1, 0, a, scale, 0), false));
                 }
             }

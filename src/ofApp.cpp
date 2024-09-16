@@ -7,6 +7,7 @@ Tree *tree;
 CircleTreeDrawer *drawer;
 LeafTreeDrawer *leafDrawer;
 TreeAnimator *animator;
+TreeRenderer *renderer;
 int frameRate = 120;
 
 ofFbo drawBuffer;
@@ -69,6 +70,18 @@ void ofApp::setup(){
                                            [](float v, float d) -> float { return sin(d+v/320) * 180 - 90; },
                                            [](float v, float d) -> float { return 0.5 + sinf(sqrt(d)) * 0.1; },
                                            [](float v, float d) -> float { return 0.2 + cosf(d/10) * 0.3; }
+                                           )
+                     );
+
+    NodeAnimator *nodeAnimator4 =
+    new NodeAnimator(
+                     NodeAnimatorFunctions(nullptr,
+                                           nullptr,
+                                           [](float v, float d) -> float { return v + 0.1; },
+//                                           [](float v, float d) -> float { return 0.1 + cosf(d/20) * 0.1; },
+                                           nullptr,
+                                           nullptr
+//                                           [](float v, float d) -> float { return 0.1 + sinf(d) * 0.4; }
                                            )
                      );
 
@@ -152,6 +165,7 @@ void ofApp::setup(){
 
     animatorInstaller.visitAll();
     
+    renderer = new TreeRenderer(tree);
     
     ofSetCircleResolution(200);
 //    ofEnableBlendMode(OF_BLENDMODE_SCREEN);
@@ -180,7 +194,7 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-    // Leaves 👇🏻
+//    // Leaves 👇🏻
     drawBuffer.begin();
     ofTranslate(ofGetWidth() / 3, ofGetHeight() / 2);
     ofScale(screenScale, screenScale);
@@ -188,15 +202,23 @@ void ofApp::draw(){
     drawBuffer.end();
     
     drawBuffer.draw(0, 0);
-    // Leaves ☝🏻
-    
-    // Circles 👇🏻
+//    // Leaves ☝🏻
+//    
+//    // Circles 👇🏻
+    ofPushMatrix();
     ofSetColor(ofColor::fromHsb(128, 50, 200));
     ofTranslate(ofGetWidth() / 6 * 5, ofGetHeight() / 2);
     ofScale(screenScale / 2, screenScale / 2);
 
     drawer->visitAll();
-    // Circles ☝🏻
+    ofPopMatrix();
+//    // Circles ☝🏻
+    
+    ofSetColor(255, 0, 0, 255);
+    ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
+    ofScale(screenScale, screenScale);
+    RenderedTree rendered = renderer->render();
+    RenderedTreeDrawer::drawAsLines(rendered);
 }
 
 //--------------------------------------------------------------
