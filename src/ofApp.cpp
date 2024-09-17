@@ -114,11 +114,11 @@ void ofApp::setup(){
 //            return animators[ofRandom(3)];
 ////            return animators[depth % 3];
 //        }
-        if (depth % 2 == 0) {
-            return animators[ofRandom(8)];
-        } else {
-            return nullptr;
-        }
+//        if (depth % 2 == 0) {
+//            return animators[ofRandom(8)];
+//        } else {
+            return animators[3];
+//        }
 ////        return animators[depth % 3];
 //        if (depth == 2) {
 //            return animators[ofRandom(3)];
@@ -174,18 +174,23 @@ void ofApp::draw(){
     RenderedTree rendered = renderer->render();
     
     drawBuffer.begin();
+    ofEnableBlendMode(OF_BLENDMODE_SCREEN);
     ofTranslate(ofGetWidth() / 4, ofGetHeight() / 2);
     ofScale(screenScale, screenScale);
     RenderedTreeDrawer::drawAsPoints(rendered);
     drawBuffer.end();
+    
     drawBuffer.draw(0, 0);
     
     drawBuffer2.begin();
-    ofClear(0, 0, 0);
+    ofEnableBlendMode(OF_BLENDMODE_ADD);
+//    ofClear(0, 0, 0);
     ofTranslate(3*ofGetWidth() / 4, ofGetHeight() / 2);
     ofScale(screenScale, screenScale);
-    RenderedTreeDrawer::drawAsLines(rendered);
+//    RenderedTreeDrawer::drawAsCircles(rendered);
+    RenderedTreeDrawer::drawAsPoints(rendered);
     drawBuffer2.end();
+    
     drawBuffer2.draw(0, 0);
 }
 
