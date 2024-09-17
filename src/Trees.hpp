@@ -346,13 +346,13 @@ public:
     }
     
     static void drawSubtreePoints(RenderedTreeNode node, RenderedTreeNode *parent) {
-//        ofSetColor(node.color);
+        ofSetColor(node.color);
         if (node.maxBranchDepth - node.depth == 0) {
             //            c = ofColor(0.5, 0.8, 0.9);
             //            ofSetColor(ofColor_(ofColor::fromHsb(0.5, 0.8, 0.9)));
-            ofSetColor(ofColor::fromHsb(150, 240, 230, 120));
+            ofSetColor(ofColor::fromHsb(150, 240, 230, 200));
         } else if (node.maxBranchDepth - node.depth == 1) {
-            ofSetColor(ofColor::fromHsb(30, 255, 250, 120));
+            ofSetColor(ofColor::fromHsb(30, 255, 250, 240));
         } else if (node.maxBranchDepth - node.depth == 2) {
             ofSetColor(255, 0, 0, 145);
         } else {
