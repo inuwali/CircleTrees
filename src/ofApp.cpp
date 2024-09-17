@@ -35,7 +35,7 @@ void ofApp::setup(){
     screenScale = getRetinaScale();
     ofSetWindowShape(windowWidth * screenScale, windowHeight * screenScale);
 
-    TreeGenerator generator = TreeGenerator(4, windowHeight / 6);
+    TreeGenerator generator = TreeGenerator(3, windowHeight / 6);
     tree = generator.generateTree();
     
     drawer = new CircleTreeDrawer(tree);
@@ -135,6 +135,14 @@ void ofApp::setup(){
                                                [](float v, float d) -> float { return 0.2 + cosf(d/10) * 0.3; }
                                                )
                          ),
+        new NodeAnimator(
+                         NodeAnimatorFunctions(nullptr,
+                                               nullptr,
+                                               [](float v, float d) -> float { return v - 0.1; },
+                                               nullptr,
+                                               nullptr
+                                               )
+                         ),
     };
     
     AnimatorChooser chooser = [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
@@ -156,7 +164,8 @@ void ofApp::setup(){
 //            return animators[depth % 3];
 //        }
 //        return animators[depth %3 + 3];
-        return animators[3 + ofRandom(3)];
+//        return animators[3 + ofRandom(3)];
+        return animators[6];
     };
     
     TreeAnimatorInstaller animatorInstaller = TreeAnimatorInstaller(tree,

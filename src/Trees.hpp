@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <vector>
+#include <math.h>
 #include "ofApp.h"
 
 
@@ -447,46 +448,84 @@ public:
     }
     
     RenderedTree render() {
-        return RenderedTree(renderSubtree(tree->root, ofMatrix4x4(), ofVec4f(0, 0, 0, 1), 0));
+        return RenderedTree(renderSubtree(tree->root, nullptr, ofMatrix4x4(), ofVec4f(0, 0, 0, 1), 0));
     }
     
-    RenderedTreeNode renderSubtree(TreeNode *node, ofMatrix4x4 currentMatrix, ofVec4f currentPoint, int currentDepth) {
-        if (currentDepth > 0) {
-            currentMatrix.rotate(node->parameters.terminusAngle, 0, 0, 1);
+    RenderedTreeNode renderSubtree(TreeNode *node, TreeNode *parent, ofMatrix4x4 currentMatrix, ofVec4f currentPoint, int currentDepth) {
+        if (parent != nullptr) {
+            cout << "    * angle: " << node->parameters.terminusAngle << " * offset: " << node->parameters.offset << "\n";
+            currentMatrix.scale(parent->parameters.size, parent->parameters.size, 1);
             currentMatrix.translate(0, -tree->size/2 - node->parameters.offset * tree->size / 2, 0);
-            currentMatrix.scale(node->parameters.size, node->parameters.size, 1);
-            currentMatrix.rotate(node->parameters.branchAngle, 0, 0, 1);
-            
-            currentPoint = currentMatrix.preMult(currentPoint);
+            currentMatrix.rotate(node->parameters.terminusAngle, 0, 0, 1);
+//            currentMatrix.rotate(M_PI/2, 0, 0, 1);
+        } else {
+            cout << "ROOT ***\n";
+        }
+
+        ofVec4f point = ofVec4f(0, 0, 0, 1);
+        point = currentMatrix.preMult(point);
+        if (currentDepth > 0) {
+            cout << "    POINT: " << point << "\n";
         }
         
-        std::vector<RenderedTreeNode> children = std::vector<RenderedTreeNode>();
-        for (TreeNode *child: node->children) {
-            ofMatrix4x4 childMatrix = currentMatrix;
-            
-//            if (currentDepth > 0) {
-//                childMatrix.rotate(child->parameters.terminusAngle, 0, 0, 1);
-//                childMatrix.translate(0, -tree->size/2 - child->parameters.offset * tree->size / 2, 0);
-//                childMatrix.scale(child->parameters.size, child->parameters.size, 1);
-//                childMatrix.rotate(child->parameters.branchAngle, 0, 0, 1);
-//            }
-            children.push_back(renderSubtree(child, childMatrix, currentPoint, currentDepth + 1));
-        }
-        
-//        ofVec4f point = ofVec4f(0, 0, 0, 1);
-//        point = currentMatrix.preMult(point);
-        
+        currentMatrix.rotate(node->parameters.branchAngle, 0, 0, 1);
+
         ofColor color = ofColor(0, 0, 0, 255);
         switch (currentDepth) {
             case 0: color = ofColor(255, 0, 0, 255); break;
             case 1: color = ofColor(0, 255, 0, 255); break;
             case 2: color = ofColor(0, 0, 255, 255); break;
         }
-//        RenderedTreeNode renderedNode = RenderedTreeNode(ofPoint(point.x, point.y), currentMatrix.getScale().x, ofVec2f(0, 0), currentDepth, 0, 0, color);
-        RenderedTreeNode renderedNode = RenderedTreeNode(ofPoint(currentPoint.x, currentPoint.y), currentMatrix.getScale().x, ofVec2f(0, 0), currentDepth, 0, 0, color);
+
+        RenderedTreeNode renderedNode = RenderedTreeNode(ofPoint(point.x, point.y), currentMatrix.getScale().x, ofVec2f(0, 0), currentDepth, 0, 0, color);
+
+        int n = 0;
+        std::vector<RenderedTreeNode> children = std::vector<RenderedTreeNode>();
+        for (TreeNode *child: node->children) {
+            cout << currentDepth << "C" << n << " ***\n";
+            children.push_back(renderSubtree(child, node, currentMatrix, point, currentDepth + 1));
+            n += 1;
+        }
+        
         renderedNode.children = children;
         
         return renderedNode;
+//        if (currentDepth > 0) {
+//            currentMatrix.rotate(node->parameters.terminusAngle, 0, 0, 1);
+//            currentMatrix.translate(0, -tree->size/2 - node->parameters.offset * tree->size / 2, 0);
+//            currentMatrix.scale(node->parameters.size, node->parameters.size, 1);
+//            currentMatrix.rotate(node->parameters.branchAngle, 0, 0, 1);
+//            
+//            currentPoint = currentMatrix.preMult(currentPoint);
+//        }
+//        
+//        std::vector<RenderedTreeNode> children = std::vector<RenderedTreeNode>();
+//        for (TreeNode *child: node->children) {
+//            ofMatrix4x4 childMatrix = currentMatrix;
+//            
+////            if (currentDepth > 0) {
+////                childMatrix.rotate(child->parameters.terminusAngle, 0, 0, 1);
+////                childMatrix.translate(0, -tree->size/2 - child->parameters.offset * tree->size / 2, 0);
+////                childMatrix.scale(child->parameters.size, child->parameters.size, 1);
+////                childMatrix.rotate(child->parameters.branchAngle, 0, 0, 1);
+////            }
+//            children.push_back(renderSubtree(child, childMatrix, currentPoint, currentDepth + 1));
+//        }
+//        
+////        ofVec4f point = ofVec4f(0, 0, 0, 1);
+////        point = currentMatrix.preMult(point);
+//        
+//        ofColor color = ofColor(0, 0, 0, 255);
+//        switch (currentDepth) {
+//            case 0: color = ofColor(255, 0, 0, 255); break;
+//            case 1: color = ofColor(0, 255, 0, 255); break;
+//            case 2: color = ofColor(0, 0, 255, 255); break;
+//        }
+////        RenderedTreeNode renderedNode = RenderedTreeNode(ofPoint(point.x, point.y), currentMatrix.getScale().x, ofVec2f(0, 0), currentDepth, 0, 0, color);
+//        RenderedTreeNode renderedNode = RenderedTreeNode(ofPoint(currentPoint.x, currentPoint.y), currentMatrix.getScale().x, ofVec2f(0, 0), currentDepth, 0, 0, color);
+//        renderedNode.children = children;
+//        
+//        return renderedNode;
     }
 };
 
