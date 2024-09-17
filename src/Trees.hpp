@@ -89,7 +89,7 @@ struct RenderedTreeNode {
 public:
     ofNode node;
     ofPoint position;
-    float scale;
+    float size;
     ofVec2f velocity;
     int depth;
     int minBranchDepth;
@@ -97,10 +97,10 @@ public:
     ofColor color;
     std::vector<RenderedTreeNode> children;
 
-    RenderedTreeNode(ofPoint position, float scale, ofVec2f velocity, int depth, int maxBranchDepth, int minBranchDepth, ofColor color):
+    RenderedTreeNode(ofPoint position, float size, ofVec2f velocity, int depth, int maxBranchDepth, int minBranchDepth, ofColor color):
     node(ofNode()),
     position(position),
-    scale(scale),
+    size(size),
     velocity(velocity),
     depth(depth),
     maxBranchDepth(maxBranchDepth),
@@ -498,7 +498,7 @@ public:
             case 2: color = ofColor(0, 0, 255, 255); break;
         }
 
-        RenderedTreeNode renderedNode = RenderedTreeNode(point, currentMatrix.getScale().x, ofVec2f(0, 0), currentDepth, 0, 0, color);
+        RenderedTreeNode renderedNode = RenderedTreeNode(point, currentMatrix.getScale().x * tree->size, ofVec2f(0, 0), currentDepth, 0, 0, color);
         renderedNode.node = _node;
 
         int n = 0;
@@ -564,10 +564,10 @@ public:
 class RenderedTreeDrawer {
 public:
     static void drawAsLines(RenderedTree tree) {
-        drawSubtree(tree.root, nullptr);
+        drawSubtreeLines(tree.root, nullptr);
     }
     
-    static void drawSubtree(RenderedTreeNode node, RenderedTreeNode *parent) {
+    static void drawSubtreeLines(RenderedTreeNode node, RenderedTreeNode *parent) {
         ofSetColor(node.color);
         if (parent != nullptr) {
             ofDrawLine(parent->position.x, parent->position.y, node.position.x, node.position.y);
@@ -577,7 +577,27 @@ public:
 //            ofDrawLine(parentPosition.x, parentPosition.y, position.x, position.y);
         }
         for (RenderedTreeNode child: node.children) {
-            drawSubtree(child, &node);
+            drawSubtreeLines(child, &node);
+        }
+    }
+    
+    static void drawAsCircles(RenderedTree tree) {
+        drawSubtreeCircles(tree.root, nullptr);
+    }
+    
+    static void drawSubtreeCircles(RenderedTreeNode node, RenderedTreeNode *parent) {
+        ofSetColor(node.color);
+//        if (parent != nullptr) {
+//            ofDrawLine(parent->position.x, parent->position.y, node.position.x, node.position.y);
+            
+            //            glm::vec3 parentPosition = parent->node.getGlobalPosition();
+            //            glm::vec3 position = node.node.getGlobalPosition();
+            //            ofDrawLine(parentPosition.x, parentPosition.y, position.x, position.y);
+            
+            ofDrawCircle(node.position.x, node.position.y, node.size);
+//        }
+        for (RenderedTreeNode child: node.children) {
+            drawSubtreeCircles(child, &node);
         }
     }
 };

@@ -204,29 +204,31 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
 //    // Leaves 👇🏻
-//    drawBuffer.begin();
-//    ofTranslate(ofGetWidth() / 3, ofGetHeight() / 2);
-//    ofScale(screenScale, screenScale);
-//    leafDrawer->visitAll();
-//    drawBuffer.end();
-//    
-//    drawBuffer.draw(0, 0);
+    drawBuffer.begin();
+    ofTranslate(ofGetWidth() / 3, ofGetHeight() / 2);
+    ofScale(screenScale, screenScale);
+    leafDrawer->visitAll();
+    drawBuffer.end();
+    
+    drawBuffer.draw(0, 0);
 //    // Leaves ☝🏻
 //    
 //    // Circles 👇🏻
-    ofPushMatrix();
-    ofSetColor(ofColor::fromHsb(128, 50, 200));
-    ofTranslate(ofGetWidth() / 6 * 5, ofGetHeight() / 2);
-    ofScale(screenScale / 2, screenScale / 2);
-
-    drawer->visitAll();
-    ofPopMatrix();
+//    ofPushMatrix();
+//    ofSetColor(ofColor::fromHsb(128, 50, 200));
+//    ofTranslate(ofGetWidth() / 6 * 5, ofGetHeight() / 2);
+//    ofScale(screenScale / 2, screenScale / 2);
+//
+//    drawer->visitAll();
+//    ofPopMatrix();
 //    // Circles ☝🏻
     
     ofSetColor(255, 0, 0, 255);
-    ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
+//    ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
+    ofTranslate(ofGetWidth() / 3, ofGetHeight() / 2);
     ofScale(screenScale, screenScale);
     RenderedTree rendered = renderer->render();
+//    RenderedTreeDrawer::drawAsCircles(rendered);
     RenderedTreeDrawer::drawAsLines(rendered);
 }
 
