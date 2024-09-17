@@ -168,104 +168,6 @@ public:
     }
 };
 
-class CircleTreeDrawer: public TreeVisitor<bool, bool> {
-public:
-    CircleTreeDrawer(Tree *tree): TreeVisitor(tree) {
-    }
-    
-    void visitAll() {
-        TreeVisitor::visitAll(true, true);
-    }
-    
-    void preVisit(TreeNode *node, int currentDepth, bool data) {
-        ofPushMatrix();
-        
-        ofRotateDeg(node->parameters.terminusAngle);
-        ofTranslate(0, -tree->size/2 - node->parameters.offset * tree->size / 2);
-        ofScale(node->parameters.size);
-        ofRotateDeg(node->parameters.branchAngle);
-    }
-    
-    void visitNode(TreeNode *node, int currentDepth, bool data) {
-        ofDrawEllipse(0, 0, tree->size, tree->size);
-    }
-    
-    void postVisit(TreeNode *node, int currentDepth, bool data) {
-        ofPopMatrix();
-    }
-};
-
-class LeafTreeDrawer: public TreeVisitor<float, int> {
-public:
-    LeafTreeDrawer(Tree *tree): TreeVisitor(tree) {
-    }
-    
-    void visitAll() {
-        TreeVisitor::visitAll(1, -1);
-    }
-    
-    void preVisit(TreeNode *node, int currentDepth, float currentScale) {
-        ofPushMatrix();
-        
-        ofRotateDeg(node->parameters.terminusAngle);
-        ofTranslate(0, -tree->size/2 - node->parameters.offset * tree->size / 2);
-        ofScale(node->parameters.size);
-        ofRotateDeg(node->parameters.branchAngle);
-    }
-    
-    void visitNode(TreeNode *node, int currentDepth, float currentScale) {
-//        if (node->children.size() == 0) {
-//            ofPushMatrix();
-//            ofScale(1.0/currentScale);
-//            ofDrawLine(0, 0, 1, 1);
-//            ofPopMatrix();
-//        }
-    }
-    
-    void visitNodeUp(TreeNode *node, int currentDepth, float currentScale, int maxDepth) {
-//        cout << node->inverseDepth() << ":" << currentDepth << ":" << maxDepth << "\n";
-        
-//        ofColor c;
-        if (maxDepth - currentDepth == 0) {
-//            c = ofColor(0.5, 0.8, 0.9);
-//            ofSetColor(ofColor_(ofColor::fromHsb(0.5, 0.8, 0.9)));
-            ofSetColor(ofColor::fromHsb(150, 240, 230, 200));
-        } else if (maxDepth - currentDepth == 1) {
-            ofSetColor(ofColor::fromHsb(30, 255, 250, 240));
-        } else if (maxDepth - currentDepth == 2) {
-            ofSetColor(255, 0, 0, 145);
-        } else {
-            ofSetColor(255, 200, 200, 100);
-        }
-        
-
-//        if (maxDepth - currentDepth < 1) {
-            ofPushMatrix();
-            ofScale(1.0/currentScale);
-//            ofSetColor(255, 0, 0, 255);
-            ofDrawLine(0, 0, 1, 1);
-            //        ofDrawCircle(0, 0, 10, 10);
-            ofPopMatrix();
-//        }
-    }
-    
-    void postVisit(TreeNode *node, int currentDepth, float currentScale) {
-        ofPopMatrix();
-    }
-    
-    float modifyData(int currentDepth, TreeNode *node, float currentScale) {
-        return currentScale * node->parameters.size;
-    }
-    
-    int modifyUpData(int currentDepth, TreeNode *node, int upData) {
-        return upData + 1;
-    }
-    
-    int reduceUpData(int a, int b) {
-        return max(a, b);
-    }
-};
-
 class TreeRenderer {
 public:
     Tree *tree;
@@ -395,16 +297,10 @@ public:
         TreeVisitor::visitAll(true, true);
     }
     
-    void preVisit(TreeNode *node, int currentDepth, bool data) {
-    }
-    
     void visitNode(TreeNode *node, int currentDepth, bool data) {
         if (currentDepth != 0) {
             node->animator = animatorChooser(node, currentDepth, animators);
         }
-    }
-    
-    void postVisit(TreeNode *node, int currentDepth, bool data) {
     }
 };
 
@@ -433,8 +329,8 @@ public:
                     node->children.push_back(generateHelper(remainingDepth - 1, BranchParameters(1, 0, (float)i * 360.0 / numChildren, scale, 0), false));
                 }
             } else {
-//                numChildren = (float)remainingDepth;
-                numChildren = 3;
+                numChildren = (float)remainingDepth;
+//                numChildren = 3;
                 for (int i = 1; i <= numChildren; i++) {
                     float a = (float)i * 360.0 / (numChildren * 2) - 360.0 / numChildren;
                     node->children.push_back(generateHelper(remainingDepth - 1, BranchParameters(1, 0, a, scale, 0), false));
