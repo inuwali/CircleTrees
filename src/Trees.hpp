@@ -457,10 +457,19 @@ public:
     RenderedTreeNode renderSubtree(TreeNode *node, TreeNode *parent, ofMatrix4x4 currentMatrix, ofVec4f currentPoint, int currentDepth) {
         ofNode _node = ofNode();
         if (parent != nullptr) {
+            if (currentDepth == 1) {
+                0;
+            }
+
+            // THIS WORKS in terms of correct order
             cout << "    * angle: " << node->parameters.terminusAngle << " * offset: " << node->parameters.offset << "\n";
-            currentMatrix.glTranslate(ofVec3f(0, -tree->size/2 - node->parameters.offset * tree->size / 2, 0));
             currentMatrix.glRotate(node->parameters.terminusAngle, 0, 0, 1);
-            currentMatrix.glScale(parent->parameters.size, parent->parameters.size, 1);
+            currentMatrix.glTranslate(ofVec3f(0, -tree->size/2 - node->parameters.offset * tree->size / 2, 0));
+            currentMatrix.glScale(node->parameters.size, node->parameters.size, 1);
+            currentMatrix.glRotate(node->parameters.branchAngle, 0, 0, 1);
+
+            
+            
 //            currentMatrix.rotate(M_PI/2, 0, 0, 1);
             
 //            _node.move(0, -tree->size/2 - node->parameters.offset * tree->size / 2, 0);
@@ -495,8 +504,13 @@ public:
         int n = 0;
         std::vector<RenderedTreeNode> children = std::vector<RenderedTreeNode>();
         for (TreeNode *child: node->children) {
+            ofMatrix4x4 childMatrix = currentMatrix;
             cout << currentDepth << "C" << n << " ***\n";
-            RenderedTreeNode childTreeRoot = renderSubtree(child, node, currentMatrix, point, currentDepth + 1);
+//            childMatrix.glTranslate(ofVec3f(0, -tree->size/2 - child->parameters.offset * tree->size / 2, 0));
+//            childMatrix.glRotate(child->parameters.terminusAngle, 0, 0, 1);
+//            childMatrix.glScale(node->parameters.size, node->parameters.size, 1);
+
+            RenderedTreeNode childTreeRoot = renderSubtree(child, node, childMatrix, point, currentDepth + 1);
             children.push_back(childTreeRoot);
             childTreeRoot.node.setParent(_node);
             if (parent != nullptr) {
@@ -630,13 +644,13 @@ public:
         if (remainingDepth > 0) {
             float numChildren;
             if (initial) {
-                numChildren = 2;
+                numChildren = 3;
                 for (int i = 0; i < numChildren; i++) {
                     node->children.push_back(generateHelper(remainingDepth - 1, BranchParameters(1, 0, (float)i * 360.0 / numChildren, scale, 0), false));
                 }
             } else {
 //                numChildren = (float)remainingDepth;
-                numChildren = 2;
+                numChildren = 3;
                 for (int i = 1; i <= numChildren; i++) {
                     float a = (float)i * 360.0 / (numChildren * 2) - 360.0 / numChildren;
                     node->children.push_back(generateHelper(remainingDepth - 1, BranchParameters(1, 0, a, scale, 0), false));

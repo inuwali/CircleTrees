@@ -35,7 +35,7 @@ void ofApp::setup(){
     screenScale = getRetinaScale();
     ofSetWindowShape(windowWidth * screenScale, windowHeight * screenScale);
 
-    TreeGenerator generator = TreeGenerator(4, windowHeight / 6);
+    TreeGenerator generator = TreeGenerator(5, windowHeight / 6);
     tree = generator.generateTree();
     
     drawer = new CircleTreeDrawer(tree);
@@ -78,10 +78,10 @@ void ofApp::setup(){
                      NodeAnimatorFunctions(nullptr,
                                            nullptr,
                                            [](float v, float d) -> float { return v + 0.1; },
-//                                           [](float v, float d) -> float { return 0.1 + cosf(d/20) * 0.1; },
-                                           nullptr,
-                                           nullptr
-//                                           [](float v, float d) -> float { return 0.1 + sinf(d) * 0.4; }
+                                           [](float v, float d) -> float { return 0.1 + cosf(d/20) * 0.1; },
+//                                           nullptr,
+//                                           nullptr
+                                           [](float v, float d) -> float { return 0.1 + sinf(d) * 0.4; }
                                            )
                      );
 
@@ -204,13 +204,13 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
 //    // Leaves 👇🏻
-    drawBuffer.begin();
-    ofTranslate(ofGetWidth() / 3, ofGetHeight() / 2);
-    ofScale(screenScale, screenScale);
-    leafDrawer->visitAll();
-    drawBuffer.end();
-    
-    drawBuffer.draw(0, 0);
+//    drawBuffer.begin();
+//    ofTranslate(ofGetWidth() / 3, ofGetHeight() / 2);
+//    ofScale(screenScale, screenScale);
+//    leafDrawer->visitAll();
+//    drawBuffer.end();
+//    
+//    drawBuffer.draw(0, 0);
 //    // Leaves ☝🏻
 //    
 //    // Circles 👇🏻
