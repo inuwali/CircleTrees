@@ -168,63 +168,6 @@ public:
     }
 };
 
-//template <typename Data, typename UpData>
-//class TreeVisitor2 {
-//public:
-//    Tree *tree;
-//    
-//    TreeVisitor2(Tree *tree): tree(tree) {}
-//    
-//    void visitAll(Data initialData, UpData initialUpData) {
-//        visitHelper(tree->root, 0, initialData, initialUpData);
-//    }
-//    
-//    UpData visitHelper(std::vector<TreeNode *> nodes, int currentDepth, Data data, UpData upData) {
-//        for (TreeNode *node: nodes) {
-//            preVisit(node, currentDepth, data);
-//            
-//        }
-//        visitNode(node, currentDepth, data);
-//        
-//        Data newData = modifyData(currentDepth, node, data);
-//        UpData newUpData = modifyUpData(currentDepth, node, upData);
-//        UpData reducedData = newUpData;
-//        
-//        for (TreeNode *child: node->children) {
-//            preVisit(child, currentDepth + 1, newData);
-//            reducedData = reduceUpData(visitHelper(child, currentDepth + 1, newData, newUpData), reducedData);
-//            visitNodeUp(node, currentDepth + 1, newData, reducedData);
-//            postVisit(child, currentDepth + 1, newData);
-//        }
-//        
-//        return reducedData;
-//    }
-//    
-//    virtual void preVisit(TreeNode *node, int currentDepth, Data data) {
-//    }
-//    
-//    virtual void visitNode(TreeNode *node, int currentDepth, Data data) {
-//    }
-//    
-//    virtual void visitNodeUp(TreeNode *node, int currentDepth, Data data, UpData upData) {
-//    }
-//    
-//    virtual void postVisit(TreeNode *node, int currentDepth, Data data) {
-//    }
-//    
-//    virtual Data modifyData(int currentDepth, TreeNode *node, Data data) {
-//        return data;
-//    }
-//    
-//    virtual UpData modifyUpData(int currentDepth, TreeNode *node, UpData data) {
-//        return data;
-//    }
-//    
-//    virtual UpData reduceUpData(UpData a, UpData b) {
-//        return a;
-//    }
-//};
-
 class CircleTreeDrawer: public TreeVisitor<bool, bool> {
 public:
     CircleTreeDrawer(Tree *tree): TreeVisitor(tree) {
@@ -323,126 +266,6 @@ public:
     }
 };
 
-
-
-class BranchTreeDrawer: public TreeVisitor<TreeNode *, int> {
-public:
-    BranchTreeDrawer(Tree *tree): TreeVisitor(tree) {
-    }
-    
-    void visitAll() {
-        TreeVisitor::visitAll(nullptr, -1);
-    }
-    
-    void preVisit(TreeNode *node, int currentDepth, float currentScale) {
-        ofPushMatrix();
-        
-        ofRotateDeg(node->parameters.terminusAngle);
-        ofTranslate(0, -tree->size/2 - node->parameters.offset * tree->size / 2);
-        ofScale(node->parameters.size);
-        ofRotateDeg(node->parameters.branchAngle);
-    }
-    
-    void visitNode(TreeNode *node, int currentDepth, TreeNode *parentNode) {
-        //        if (node->children.size() == 0) {
-        //            ofPushMatrix();
-        //            ofScale(1.0/currentScale);
-        //            ofDrawLine(0, 0, 1, 1);
-        //            ofPopMatrix();
-        //        }
-    }
-    
-    void visitNodeUp(TreeNode *node, int currentDepth, TreeNode *parentNode, int maxDepth) {
-//        //        cout << node->inverseDepth() << ":" << currentDepth << ":" << maxDepth << "\n";
-//        
-//        //        ofColor c;
-//        if (maxDepth - currentDepth == 0) {
-//            //            c = ofColor(0.5, 0.8, 0.9);
-//            //            ofSetColor(ofColor_(ofColor::fromHsb(0.5, 0.8, 0.9)));
-//            ofSetColor(ofColor::fromHsb(150, 240, 230, 200));
-//        } else if (maxDepth - currentDepth == 1) {
-//            ofSetColor(ofColor::fromHsb(30, 255, 250, 240));
-//        } else if (maxDepth - currentDepth == 2) {
-//            ofSetColor(255, 0, 0);
-//        } else {
-//            ofSetColor(255, 200, 200, 100);
-//        }
-//        
-//        
-//        //        if (maxDepth - currentDepth < 1) {
-//        ofPushMatrix();
-//        ofScale(1.0/currentScale);
-//        ofSetColor(255, 0, 0, 255);
-//        ofDrawLine(0, 0, 1, 1);
-//        //        ofDrawCircle(0, 0, 10, 10);
-//        ofPopMatrix();
-//        //        }
-    }
-    
-    void postVisit(TreeNode *node, int currentDepth, TreeNode *parentNode) {
-        ofPopMatrix();
-    }
-    
-//    TreeNode *parentNode modifyData(int currentDepth, TreeNode *node, TreeNode *parentNode) {
-//        return parentNode;
-//    }
-    
-    int modifyUpData(int currentDepth, TreeNode *node, int upData) {
-        return upData + 1;
-    }
-    
-    int reduceUpData(int a, int b) {
-        return max(a, b);
-    }
-};
-
-//class TreeRenderer: public TreeVisitor<ofMatrix4x4, RenderedTree *> {
-//    RenderedTree *renderedTree;
-//    
-//    TreeRenderer(Tree *tree): TreeVisitor(tree), renderedTree(nullptr) {
-//    }
-//    
-//    void visitAll() {
-//        TreeVisitor::visitAll(ofMatrix4x4(), nullptr);
-//    }
-//    
-//    void preVisit(TreeNode *node, int currentDepth, ofMatrix4x4 currentMatrix) {
-//        
-//        
-//        ofRotateDeg(node->parameters.terminusAngle);
-//        ofTranslate(0, -tree->size/2 - node->parameters.offset * tree->size / 2);
-//        ofScale(node->parameters.size);
-//        ofRotateDeg(node->parameters.branchAngle);
-//    }
-//
-//    void visitNode(TreeNode *node, int currentDepth, ofMatrix4x4 currentMatrix) {
-//        ofVec4f point = ofVec4f(0, 0, 0, 1);
-//        point = currentMatrix * point;
-//        
-//        RenderedTreeNode renderedNode = RenderedTreeNode(ofPoint(point.x, point.y), currentMatrix.getScale().x, ofVec2f(0, 0), currentDepth, 0, 0, ofColor(255, 255, 255, 255));
-//        
-//        if (currentDepth == 0) {
-//            renderedTree = new RenderedTree(renderedNode);
-//        }
-//    }
-//    
-//    ofMatrix4x4 modifyData(int currentDepth, TreeNode *node, ofMatrix4x4 data) {
-//        data.rotate(node->parameters.terminusAngle, 0, 0, 1);
-//        data.translate(0, -tree->size/2 - node->parameters.offset * tree->size / 2, 0);
-//        data.scale(node->parameters.size, node->parameters.size, 1);
-//        data.rotate(node->parameters.branchAngle, 0, 0, 1);
-//        return data;
-//    }
-//    
-//    void visitNodeUp(TreeNode *node, int currentDepth, int data, RenderedTreeNode upData) {
-//        
-//    }
-//    
-//    void postVisit(TreeNode *node, int currentDepth, int data) {
-//        ofPopMatrix();
-//    }
-//};
-
 class TreeRenderer {
 public:
     Tree *tree;
@@ -472,11 +295,15 @@ public:
             case 2: color = ofColor(0, 0, 255, 255); break;
         }
 
-        RenderedTreeNode renderedNode = RenderedTreeNode(point, currentMatrix.getScale().x * tree->size, ofVec2f(0, 0), currentDepth, 0, 0, color);
+        RenderedTreeNode renderedNode = RenderedTreeNode(point, currentMatrix.getScale().x * tree->size, ofVec2f(0, 0), currentDepth, currentDepth, currentDepth, color);
 
         std::vector<RenderedTreeNode> children = std::vector<RenderedTreeNode>();
+        int maxBranchDepth = 0;
+        int minBranchDepth = 1000000000;
         for (TreeNode *child: node->children) {
             RenderedTreeNode childTreeRoot = renderSubtree(child, node, currentMatrix, point, currentDepth + 1);
+            renderedNode.minBranchDepth = min(minBranchDepth, childTreeRoot.minBranchDepth);
+            renderedNode.maxBranchDepth = max(maxBranchDepth, childTreeRoot.maxBranchDepth);
             children.push_back(childTreeRoot);
         }
         
@@ -514,17 +341,29 @@ public:
         }
     }
     
-//    static void drawAsCircles(RenderedTree tree) {
-//        drawSubtreeCircles(tree.root, nullptr);
-//    }
-//    
-//    static void drawSubtreeCircles(RenderedTreeNode node, RenderedTreeNode *parent) {
+    static void drawAsPoints(RenderedTree tree) {
+        drawSubtreePoints(tree.root, nullptr);
+    }
+    
+    static void drawSubtreePoints(RenderedTreeNode node, RenderedTreeNode *parent) {
 //        ofSetColor(node.color);
-//        ofDrawEllipse(node.position.x, node.position.y, node.size, node.size);
-//        for (RenderedTreeNode child: node.children) {
-//            drawSubtreeCircles(child, &node);
-//        }
-//    }
+        if (node.maxBranchDepth - node.depth == 0) {
+            //            c = ofColor(0.5, 0.8, 0.9);
+            //            ofSetColor(ofColor_(ofColor::fromHsb(0.5, 0.8, 0.9)));
+            ofSetColor(ofColor::fromHsb(150, 240, 230, 120));
+        } else if (node.maxBranchDepth - node.depth == 1) {
+            ofSetColor(ofColor::fromHsb(30, 255, 250, 120));
+        } else if (node.maxBranchDepth - node.depth == 2) {
+            ofSetColor(255, 0, 0, 145);
+        } else {
+            ofSetColor(255, 200, 200, 100);
+        }
+
+        ofDrawLine(node.position.x, node.position.y, node.position.x+0.5, node.position.y+0.5);
+        for (RenderedTreeNode child: node.children) {
+            drawSubtreePoints(child, &node);
+        }
+    }
 };
 
 class TreeAnimator: public TreeVisitor<float, bool> {

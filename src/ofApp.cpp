@@ -164,8 +164,8 @@ void ofApp::setup(){
 //            return animators[depth % 3];
 //        }
 //        return animators[depth %3 + 3];
-//        return animators[3 + ofRandom(3)];
-        return animators[6];
+        return animators[3 + ofRandom(3)];
+//        return animators[6];
     };
     
     TreeAnimatorInstaller animatorInstaller = TreeAnimatorInstaller(tree,
@@ -203,13 +203,16 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
+    RenderedTree rendered = renderer->render();
 //    // Leaves 👇🏻
     drawBuffer.begin();
     ofTranslate(ofGetWidth() / 3, ofGetHeight() / 2);
     ofScale(screenScale, screenScale);
-    leafDrawer->visitAll();
+//    leafDrawer->visitAll();
+    RenderedTreeDrawer::drawAsPoints(rendered);
+//    RenderedTreeDrawer::drawAsLines(rendered);
     drawBuffer.end();
-    
+//    
     drawBuffer.draw(0, 0);
 //    // Leaves ☝🏻
 //    
@@ -223,13 +226,14 @@ void ofApp::draw(){
 //    ofPopMatrix();
 //    // Circles ☝🏻
     
-    ofSetColor(255, 0, 0, 255);
+//    ofSetColor(255, 0, 0, 255);
 //    ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
     ofTranslate(ofGetWidth() / 3, ofGetHeight() / 2);
     ofScale(screenScale, screenScale);
-    RenderedTree rendered = renderer->render();
+//    RenderedTree rendered = renderer->render();
 //    RenderedTreeDrawer::drawAsCircles(rendered);
-    RenderedTreeDrawer::drawAsLines(rendered);
+//    RenderedTreeDrawer::drawAsLines(rendered);
+//    RenderedTreeDrawer::drawAsPoints(rendered);
 }
 
 //--------------------------------------------------------------
