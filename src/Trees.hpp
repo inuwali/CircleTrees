@@ -12,6 +12,7 @@
 #include <vector>
 #include <math.h>
 #include "ofApp.h"
+#include "ofNode.h"
 
 
 struct BranchParameters {
@@ -86,6 +87,7 @@ public:
 
 struct RenderedTreeNode {
 public:
+    ofNode node;
     ofPoint position;
     float scale;
     ofVec2f velocity;
@@ -96,6 +98,7 @@ public:
     std::vector<RenderedTreeNode> children;
 
     RenderedTreeNode(ofPoint position, float scale, ofVec2f velocity, int depth, int maxBranchDepth, int minBranchDepth, ofColor color):
+    node(ofNode()),
     position(position),
     scale(scale),
     velocity(velocity),
@@ -452,23 +455,32 @@ public:
     }
     
     RenderedTreeNode renderSubtree(TreeNode *node, TreeNode *parent, ofMatrix4x4 currentMatrix, ofVec4f currentPoint, int currentDepth) {
+        ofNode _node = ofNode();
         if (parent != nullptr) {
             cout << "    * angle: " << node->parameters.terminusAngle << " * offset: " << node->parameters.offset << "\n";
-            currentMatrix.scale(parent->parameters.size, parent->parameters.size, 1);
-            currentMatrix.translate(0, -tree->size/2 - node->parameters.offset * tree->size / 2, 0);
-            currentMatrix.rotate(node->parameters.terminusAngle, 0, 0, 1);
+            currentMatrix.glTranslate(ofVec3f(0, -tree->size/2 - node->parameters.offset * tree->size / 2, 0));
+            currentMatrix.glRotate(node->parameters.terminusAngle, 0, 0, 1);
+            currentMatrix.glScale(parent->parameters.size, parent->parameters.size, 1);
 //            currentMatrix.rotate(M_PI/2, 0, 0, 1);
+            
+//            _node.move(0, -tree->size/2 - node->parameters.offset * tree->size / 2, 0);
+//            _node.rotateDeg(node->parameters.terminusAngle, 0, 0, 1);
+//            _node.setScale(node->parameters.size);
+            
+//            _node.setPosition(0, -200, 0);
+
         } else {
             cout << "ROOT ***\n";
+            _node.rotateDeg(0, 0, 0, 1);
         }
-
+        
         ofVec4f point = ofVec4f(0, 0, 0, 1);
         point = currentMatrix.preMult(point);
         if (currentDepth > 0) {
             cout << "    POINT: " << point << "\n";
         }
         
-        currentMatrix.rotate(node->parameters.branchAngle, 0, 0, 1);
+//        currentMatrix.rotate(node->parameters.branchAngle, 0, 0, 1);
 
         ofColor color = ofColor(0, 0, 0, 255);
         switch (currentDepth) {
@@ -477,13 +489,19 @@ public:
             case 2: color = ofColor(0, 0, 255, 255); break;
         }
 
-        RenderedTreeNode renderedNode = RenderedTreeNode(ofPoint(point.x, point.y), currentMatrix.getScale().x, ofVec2f(0, 0), currentDepth, 0, 0, color);
+        RenderedTreeNode renderedNode = RenderedTreeNode(point, currentMatrix.getScale().x, ofVec2f(0, 0), currentDepth, 0, 0, color);
+        renderedNode.node = _node;
 
         int n = 0;
         std::vector<RenderedTreeNode> children = std::vector<RenderedTreeNode>();
         for (TreeNode *child: node->children) {
             cout << currentDepth << "C" << n << " ***\n";
-            children.push_back(renderSubtree(child, node, currentMatrix, point, currentDepth + 1));
+            RenderedTreeNode childTreeRoot = renderSubtree(child, node, currentMatrix, point, currentDepth + 1);
+            children.push_back(childTreeRoot);
+            childTreeRoot.node.setParent(_node);
+            if (parent != nullptr) {
+                _node.setPosition(0, -200, 0);
+            }
             n += 1;
         }
         
@@ -539,6 +557,10 @@ public:
         ofSetColor(node.color);
         if (parent != nullptr) {
             ofDrawLine(parent->position.x, parent->position.y, node.position.x, node.position.y);
+            
+//            glm::vec3 parentPosition = parent->node.getGlobalPosition();
+//            glm::vec3 position = node.node.getGlobalPosition();
+//            ofDrawLine(parentPosition.x, parentPosition.y, position.x, position.y);
         }
         for (RenderedTreeNode child: node.children) {
             drawSubtree(child, &node);

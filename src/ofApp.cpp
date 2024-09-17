@@ -35,7 +35,7 @@ void ofApp::setup(){
     screenScale = getRetinaScale();
     ofSetWindowShape(windowWidth * screenScale, windowHeight * screenScale);
 
-    TreeGenerator generator = TreeGenerator(3, windowHeight / 6);
+    TreeGenerator generator = TreeGenerator(4, windowHeight / 6);
     tree = generator.generateTree();
     
     drawer = new CircleTreeDrawer(tree);
