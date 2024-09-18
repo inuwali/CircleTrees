@@ -26,6 +26,8 @@ int screenScale;
 int windowWidth;
 int windowHeight;
 
+std::vector<ColorChooser> colorChoosers;
+
 uint64_t randomSeed;
 
 inline float sawtoothWave(float frequency, float t, double amplitude = 1.0, double phase = 0.0, double offset = 0.0) {
@@ -71,8 +73,9 @@ float diagWave(float frequency, float t, double amplitude = 1.0, double phase = 
 //--------------------------------------------------------------
 void ofApp::setup(){
     randomSeed = ofGetSystemTimeMillis();
-    ofSetRandomSeed(randomSeed);
-    
+//    ofSetRandomSeed(randomSeed);
+    ofSetRandomSeed(331661184);
+
     cout << "SEED: " << randomSeed << "\n";
     
     windowWidth = 2000;
@@ -219,6 +222,32 @@ void ofApp::setup(){
                                                                     chooser);
 
     animatorInstaller.visitAll();
+
+    colorChoosers = {
+        [](RenderedTreeNode node) -> ofColor { return node.color; },
+        [](RenderedTreeNode node) -> ofColor {
+            if (node.maxBranchDepth - node.depth == 0) {
+                return ofColor::fromHsb(150, 240, 230, 100);
+            } else if (node.maxBranchDepth - node.depth == 1) {
+                return ofColor::fromHsb(170, 230, 250, 150);
+            } else if (node.maxBranchDepth - node.depth == 2) {
+                return ofColor::fromHsb(190, 200, 200, 200);
+            } else {
+                return ofColor::fromHsb(25, 255, 240, 255);
+            }
+        },
+        [](RenderedTreeNode node) -> ofColor {
+            if (node.maxBranchDepth - node.depth == 0) {
+                return ofColor::fromHsb(90, 240, 230, 200);
+            } else if (node.maxBranchDepth - node.depth == 1) {
+                return ofColor::fromHsb(200, 230, 250, 150);
+            } else if (node.maxBranchDepth - node.depth == 2) {
+                return ofColor::fromHsb(220, 200, 200, 200);
+            } else {
+                return ofColor::fromHsb(70, 255, 240, 170);
+            }
+        }
+    };
     
     renderer = new TreeRenderer(tree);
     
@@ -244,7 +273,6 @@ void ofApp::setup(){
 //        ofSetColor(255, 0, 0, 50);
     ofFill();
     ofBackground(255, 255, 255);
-
 }
 
 //--------------------------------------------------------------
@@ -255,12 +283,14 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     RenderedTree rendered = renderer->render();
-    
+    RenderedTreeDrawer drawer1 = RenderedTreeDrawer(rendered, colorChoosers[1]);
+    RenderedTreeDrawer drawer2 = RenderedTreeDrawer(rendered, colorChoosers[2]);
+
     drawBuffer.begin();
     ofEnableBlendMode(OF_BLENDMODE_SCREEN);
     ofTranslate(ofGetWidth() / 4, ofGetHeight() / 2);
     ofScale(screenScale, screenScale);
-    RenderedTreeDrawer::drawAsPoints(rendered);
+    drawer1.drawAsPoints(rendered);
     drawBuffer.end();
     
     drawBuffer.draw(0, 0);
@@ -271,7 +301,7 @@ void ofApp::draw(){
     ofTranslate(3*ofGetWidth() / 4, ofGetHeight() / 2);
     ofScale(screenScale, screenScale);
 //    RenderedTreeDrawer::drawAsFatPoints(rendered);
-    RenderedTreeDrawer::drawAsPoints(rendered);
+    drawer2.drawAsPoints(rendered);
 //    RenderedTreeDrawer::drawAsCircles(rendered);
 //    RenderedTreeDrawer::drawAsLines(rendered);
     drawBuffer2.end();
