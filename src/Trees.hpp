@@ -250,15 +250,13 @@ public:
     static void drawSubtreePoints(RenderedTreeNode node, RenderedTreeNode *parent) {
         ofSetColor(node.color);
         if (node.maxBranchDepth - node.depth == 0) {
-            //            c = ofColor(0.5, 0.8, 0.9);
-            //            ofSetColor(ofColor_(ofColor::fromHsb(0.5, 0.8, 0.9)));
-            ofSetColor(ofColor::fromHsb(150, 240, 230, 200));
+            ofSetColor(ofColor::fromHsb(150, 240, 230, 100));
         } else if (node.maxBranchDepth - node.depth == 1) {
-            ofSetColor(ofColor::fromHsb(30, 255, 250, 240));
+            ofSetColor(ofColor::fromHsb(170, 230, 250, 150));
         } else if (node.maxBranchDepth - node.depth == 2) {
-            ofSetColor(255, 0, 0, 145);
+            ofSetColor(ofColor::fromHsb(190, 200, 200, 200));
         } else {
-            ofSetColor(255, 200, 200, 100);
+            ofSetColor(ofColor::fromHsb(25, 255, 240, 255));
         }
 
         ofDrawLine(node.position.x, node.position.y, node.position.x+0.5, node.position.y+0.5);
@@ -266,6 +264,29 @@ public:
             drawSubtreePoints(child, &node);
         }
     }
+    
+    static void drawAsFatPoints(RenderedTree tree) {
+        drawSubtreeFatPoints(tree.root, nullptr);
+    }
+    
+    static void drawSubtreeFatPoints(RenderedTreeNode node, RenderedTreeNode *parent) {
+        ofSetColor(node.color);
+        if (node.maxBranchDepth - node.depth == 0) {
+            ofSetColor(ofColor::fromHsb(150, 240, 230, 100));
+        } else if (node.maxBranchDepth - node.depth == 1) {
+            ofSetColor(ofColor::fromHsb(170, 230, 250, 150));
+        } else if (node.maxBranchDepth - node.depth == 2) {
+            ofSetColor(ofColor::fromHsb(190, 200, 200, 200));
+        } else {
+            ofSetColor(ofColor::fromHsb(25, 255, 240, 255));
+        }
+        
+        ofDrawEllipse(node.position.x, node.position.y, 3, 3);
+        for (RenderedTreeNode child: node.children) {
+            drawSubtreeFatPoints(child, &node);
+        }
+    }
+
 };
 
 class TreeAnimator: public TreeVisitor<float, bool> {
@@ -324,7 +345,7 @@ public:
         if (remainingDepth > 0) {
             float numChildren;
             if (initial) {
-                numChildren = 3;
+                numChildren = 4;
                 for (int i = 0; i < numChildren; i++) {
                     node->children.push_back(generateHelper(remainingDepth - 1, BranchParameters(1, 0, (float)i * 360.0 / numChildren, scale, 0), false));
                 }
