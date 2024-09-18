@@ -73,8 +73,8 @@ float diagWave(float frequency, float t, double amplitude = 1.0, double phase = 
 //--------------------------------------------------------------
 void ofApp::setup(){
     randomSeed = ofGetSystemTimeMillis();
-//    ofSetRandomSeed(randomSeed);
-    ofSetRandomSeed(331661184);
+    ofSetRandomSeed(randomSeed);
+//    ofSetRandomSeed(334659288);
 
     cout << "SEED: " << randomSeed << "\n";
     
@@ -93,11 +93,16 @@ void ofApp::setup(){
                          NodeAnimatorFunctions(nullptr,
                                                nullptr,
                                                [](float v, float d) -> float { return v + 1; },
-//                                               nullptr,
-//                                               [](float v, float d) -> float { return ; },
+                                               [](float v, float d) -> float { return 0.1 + cosf(d/20) * 0.1; },
+                                               [](float v, float d) -> float { return 0.3 + sawtoothWave(d*1.1, 1) * 0.4; }
+                                               )
+                         ),
+        new NodeAnimator(
+                         NodeAnimatorFunctions(nullptr,
+                                               nullptr,
+                                               [](float v, float d) -> float { return v + 1; },
                                                nullptr,
                                                [](float v, float d) -> float { return 0.3 + triangleWave(d*1.1, 1) * 0.4; }
-//                                               [](float v, float d) -> float { return 0.3 + sin(d * 2*PI) * 0.4; }
                                                )
                          ),
         new NodeAnimator(
@@ -204,11 +209,11 @@ void ofApp::setup(){
 //            return animators[3];
 //        }
 ////        return animators[depth % 3];
-//        if (depth == 2) {
-//            return animators[ofRandom(3)];
-//        } else {
-//            return animators[depth % 3];
-//        }
+        if (depth == 3) {
+            return animators[ofRandom(2)];
+        } else {
+            return animators[(depth+2) % 4];
+        }
 //        return animators[depth %3 + ofRandom(3)];
 //        return animators[3 + ofRandom(3)];
 //        return animators[6];
