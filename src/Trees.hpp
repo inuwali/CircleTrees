@@ -96,6 +96,7 @@ public:
     int maxBranchDepth;
     ofColor color;
     std::vector<RenderedTreeNode> children;
+    int rand;
 
     RenderedTreeNode(ofPoint position, float size, ofVec2f velocity, int depth, int maxBranchDepth, int minBranchDepth, ofColor color):
     node(ofNode()),
@@ -106,7 +107,8 @@ public:
     maxBranchDepth(maxBranchDepth),
     minBranchDepth(minBranchDepth),
     color(color),
-    children(std::vector<RenderedTreeNode>()) {}
+    children(std::vector<RenderedTreeNode>()),
+    rand(ofRandom(1000000000)) {}
 };
 
 struct RenderedTree {
@@ -198,7 +200,7 @@ public:
         }
 
         RenderedTreeNode renderedNode = RenderedTreeNode(point, currentMatrix.getScale().x * tree->size, ofVec2f(0, 0), currentDepth, currentDepth, currentDepth, color);
-
+        
         std::vector<RenderedTreeNode> children = std::vector<RenderedTreeNode>();
         int maxBranchDepth = 0;
         int minBranchDepth = 1000000000;
@@ -216,21 +218,23 @@ public:
 };
 
 typedef ofColor (*ColorChooser)(RenderedTreeNode);
+typedef bool (*BinaryChooser)(RenderedTreeNode);
 
 class RenderedTreeDrawer {
 public:
     RenderedTree tree;
     ColorChooser colorChooser;
+    BinaryChooser drawPolicy;
 
-    RenderedTreeDrawer(RenderedTree tree, ColorChooser colorChooser): tree(tree), colorChooser(colorChooser) {}
+    RenderedTreeDrawer(RenderedTree tree, ColorChooser colorChooser, BinaryChooser drawPolicy = [](RenderedTreeNode n) { return true; }): tree(tree), colorChooser(colorChooser), drawPolicy(drawPolicy) {}
     
     void drawAsLines(RenderedTree tree) {
         drawSubtreeLines(tree.root, nullptr);
     }
     
     void drawSubtreeLines(RenderedTreeNode node, RenderedTreeNode *parent) {
-        ofSetColor(colorChooser(node));
-        if (parent != nullptr) {
+        if (drawPolicy(node) && parent != nullptr) {
+            ofSetColor(colorChooser(node));
             ofDrawLine(parent->position.x, parent->position.y, node.position.x, node.position.y);
         }
         for (RenderedTreeNode child: node.children) {
@@ -243,8 +247,10 @@ public:
     }
     
     void drawSubtreeCircles(RenderedTreeNode node, RenderedTreeNode *parent) {
-        ofSetColor(colorChooser(node));
-        ofDrawEllipse(node.position.x, node.position.y, node.size, node.size);
+        if (drawPolicy(node)) {
+            ofSetColor(colorChooser(node));
+            ofDrawEllipse(node.position.x, node.position.y, node.size, node.size);
+        }
         for (RenderedTreeNode child: node.children) {
             drawSubtreeCircles(child, &node);
         }
@@ -255,8 +261,10 @@ public:
     }
     
     void drawSubtreePoints(RenderedTreeNode node, RenderedTreeNode *parent) {
-        ofSetColor(colorChooser(node));
-        ofDrawLine(node.position.x, node.position.y, node.position.x+0.5, node.position.y+0.5);
+        if (drawPolicy(node)) {
+            ofSetColor(colorChooser(node));
+            ofDrawLine(node.position.x, node.position.y, node.position.x+0.5, node.position.y+0.5);
+        }
         for (RenderedTreeNode child: node.children) {
             drawSubtreePoints(child, &node);
         }
@@ -267,8 +275,10 @@ public:
     }
     
     void drawSubtreeFatPoints(RenderedTreeNode node, RenderedTreeNode *parent) {
-        ofSetColor(colorChooser(node));
-        ofDrawEllipse(node.position.x, node.position.y, 3, 3);
+        if (drawPolicy(node)) {
+            ofSetColor(colorChooser(node));
+            ofDrawEllipse(node.position.x, node.position.y, 3, 3);
+        }
         for (RenderedTreeNode child: node.children) {
             drawSubtreeFatPoints(child, &node);
         }
@@ -332,13 +342,13 @@ public:
         if (remainingDepth > 0) {
             float numChildren;
             if (initial) {
-                numChildren = 4;
+                numChildren = 1;
                 for (int i = 0; i < numChildren; i++) {
                     node->children.push_back(generateHelper(remainingDepth - 1, BranchParameters(1, 0, (float)i * 360.0 / numChildren, scale, 0), false));
                 }
             } else {
                 numChildren = (float)remainingDepth;
-//                numChildren = 3;
+                numChildren = 4;
                 for (int i = 1; i <= numChildren; i++) {
                     float a = (float)i * 360.0 / (numChildren * 2) - 360.0 / numChildren;
                     node->children.push_back(generateHelper(remainingDepth - 1, BranchParameters(1, 0, a, scale, 0), false));

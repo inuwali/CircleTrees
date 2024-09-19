@@ -28,6 +28,7 @@ int windowHeight;
 
 std::vector<ColorChooser> colorChoosers;
 std::vector<ColorChooser> legacyColorChoosers;
+std::vector<BinaryChooser> drawChoosers;
 
 uint64_t randomSeed;
 
@@ -84,7 +85,7 @@ void ofApp::setup(){
     screenScale = getRetinaScale();
     ofSetWindowShape(windowWidth * screenScale, windowHeight * screenScale);
 
-    TreeGenerator generator = TreeGenerator(6, windowHeight / 8);
+    TreeGenerator generator = TreeGenerator(5, windowHeight / 8);
     tree = generator.generateTree();
         
     animator = new TreeAnimator(tree);
@@ -230,6 +231,14 @@ void ofApp::setup(){
                                                )
                          )
     };
+    
+    drawChoosers = {
+        [](RenderedTreeNode node) { return node.children.size() == 0; },
+        [](RenderedTreeNode node) {
+            int distFromLeaf = node.maxBranchDepth - node.depth;
+            return distFromLeaf % 3 == 0;
+        }
+    };
 
     AnimatorChooser chooser = [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
         int numAnimators = animators.size();
@@ -361,8 +370,8 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     RenderedTree rendered = renderer->render();
-    RenderedTreeDrawer drawer1 = RenderedTreeDrawer(rendered, legacyColorChoosers[0]);
-    RenderedTreeDrawer drawer2 = RenderedTreeDrawer(rendered, colorChoosers[2]);
+    RenderedTreeDrawer drawer1 = RenderedTreeDrawer(rendered, legacyColorChoosers[0], drawChoosers[0]);
+    RenderedTreeDrawer drawer2 = RenderedTreeDrawer(rendered, colorChoosers[2], drawChoosers[1]);
 
     drawBuffer.begin();
     ofEnableBlendMode(OF_BLENDMODE_SCREEN);
@@ -374,7 +383,7 @@ void ofApp::draw(){
     drawBuffer.draw(0, 0);
     
     drawBuffer2.begin();
-    ofEnableBlendMode(OF_BLENDMODE_SCREEN);
+    ofEnableBlendMode(OF_BLENDMODE_ADD);
 //    ofClear(0, 0, 0);
     ofTranslate(3*ofGetWidth() / 4, ofGetHeight() / 2);
     ofScale(screenScale, screenScale);
