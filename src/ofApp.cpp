@@ -27,6 +27,7 @@ int windowWidth;
 int windowHeight;
 
 std::vector<ColorChooser> colorChoosers;
+std::vector<ColorChooser> legacyColorChoosers;
 
 uint64_t randomSeed;
 
@@ -83,7 +84,7 @@ void ofApp::setup(){
     screenScale = getRetinaScale();
     ofSetWindowShape(windowWidth * screenScale, windowHeight * screenScale);
 
-    TreeGenerator generator = TreeGenerator(5, windowHeight / 8);
+    TreeGenerator generator = TreeGenerator(6, windowHeight / 8);
     tree = generator.generateTree();
         
     animator = new TreeAnimator(tree);
@@ -195,6 +196,41 @@ void ofApp::setup(){
                          )
     };
     
+    std::vector<NodeAnimator *> legacyAnimators = {
+        new NodeAnimator(
+                         NodeAnimatorFunctions(nullptr,
+                                               nullptr,
+                                               [](float v, float d) -> float { return v + 0.5; },
+                                               [](float v, float d) -> float { return 0.4 + sinf(d) * 0.1; },
+                                               [](float v, float d) -> float { return 0.1 + cosf(d) * 0.1; }
+                                               )
+                         ),
+        new NodeAnimator(
+                         NodeAnimatorFunctions(nullptr,
+                                               nullptr,
+                                               [](float v, float d) -> float { return v - 1; },
+                                               [](float v, float d) -> float { return 0.3 + sinf(d/2) * 0.1; },
+                                               [](float v, float d) -> float { return -0.3 + cosf(d*3) * 0.6; }
+                                               )
+                         ),
+        new NodeAnimator(
+                         NodeAnimatorFunctions(nullptr,
+                                               nullptr,
+                                               [](float v, float d) -> float { return v + 2; },
+                                               [](float v, float d) -> float { return 0.5 + sinf(v) * 0.1; },
+                                               [](float v, float d) -> float { return 0.2 + cosf(d*10) * 0.3; }
+                                               )
+                         ),
+        new NodeAnimator(
+                         NodeAnimatorFunctions(nullptr,
+                                               nullptr,
+                                               [](float v, float d) -> float { return v + 2.5; },
+                                               [](float v, float d) -> float { return 0.5 + sinf(d*2) * 0.4; },
+                                               [](float v, float d) -> float { return 0.2 + cosf(d*5) * 0.4; }
+                                               )
+                         )
+    };
+
     AnimatorChooser chooser = [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
         int numAnimators = animators.size();
 //        if (node->children.empty()) {
@@ -224,9 +260,21 @@ void ofApp::setup(){
 //        return animators[10];
     };
     
+    AnimatorChooser legacyChooser = [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+        int numAnimators = animators.size();
+//        if (node->children.empty()) {
+//            return animators[3];
+//        } else {
+//            return animators[depth % numAnimators];
+//        }
+//        return animators[abs(numAnimators - depth) % numAnimators];
+        return animators[depth % numAnimators];
+//        return animators[2 + (depth + 1) % 2];
+    };
+    
     TreeAnimatorInstaller animatorInstaller = TreeAnimatorInstaller(tree,
-                                                                    allAnimators,
-                                                                    chooser);
+                                                                    legacyAnimators,
+                                                                    legacyChooser);
 
     animatorInstaller.visitAll();
 
@@ -263,6 +311,22 @@ void ofApp::setup(){
         }
     };
     
+    legacyColorChoosers = {
+        [](RenderedTreeNode node) -> ofColor {
+            int maxDepth = node.maxBranchDepth;
+            int currentDepth = node.depth;
+            if (maxDepth - currentDepth == 0) {
+                return ofColor(255, 200, 200, 200);
+            } else if (maxDepth - currentDepth == 1) {
+                return ofColor(255, 200, 0, 220);
+            } else if (maxDepth - currentDepth == 2) {
+                return ofColor(255, 0, 0, 240);
+            } else {
+                return ofColor(255, 120, 100);
+            }
+        }
+    };
+    
     renderer = new TreeRenderer(tree);
     
     ofSetCircleResolution(200);
@@ -286,7 +350,7 @@ void ofApp::setup(){
 //    ofSetColor(200,200,220,200);
 //        ofSetColor(255, 0, 0, 50);
     ofFill();
-    ofBackground(255, 255, 255);
+    ofBackground(0, 0, 0);
 }
 
 //--------------------------------------------------------------
@@ -297,7 +361,7 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     RenderedTree rendered = renderer->render();
-    RenderedTreeDrawer drawer1 = RenderedTreeDrawer(rendered, colorChoosers[1]);
+    RenderedTreeDrawer drawer1 = RenderedTreeDrawer(rendered, legacyColorChoosers[0]);
     RenderedTreeDrawer drawer2 = RenderedTreeDrawer(rendered, colorChoosers[2]);
 
     drawBuffer.begin();
