@@ -203,23 +203,25 @@ void ofApp::setup(){
 //            return animators[ofRandom(3)];
 ////            return animators[depth % 3];
 //        }
-//        if (depth % 2 == 0) {
-//            return animators[ofRandom(8)];
-//        } else {
-//            return animators[3];
-//        }
-////        return animators[depth % 3];
-        if (depth == 3) {
-            return animators[ofRandom(2)];
+        if (depth % 2 != 0) {
+            return animators[4];
         } else {
-            return animators[(depth+2) % 4];
+            return animators[9];
         }
+////        return animators[depth % 3];
+//        if (depth == 3) {
+//            return animators[ofRandom(2)];
+//        } else {
+//            return animators[(depth+2) % 4];
+//        }
 //        return animators[depth %3 + ofRandom(3)];
 //        return animators[3 + ofRandom(3)];
 //        return animators[6];
 //        return animators[ofRandom(2) * 3];
 //        return animators[0];
-        return animators[ofRandom(numAnimators)];
+//        return animators[ofRandom(numAnimators)];
+//        return animators[9 + ofRandom(4)];
+//        return animators[10];
     };
     
     TreeAnimatorInstaller animatorInstaller = TreeAnimatorInstaller(tree,
@@ -243,13 +245,20 @@ void ofApp::setup(){
         },
         [](RenderedTreeNode node) -> ofColor {
             if (node.maxBranchDepth - node.depth == 0) {
-                return ofColor::fromHsb(90, 240, 230, 200);
+                return ofColor::fromHsb(90, 240, 120, 140);
             } else if (node.maxBranchDepth - node.depth == 1) {
-                return ofColor::fromHsb(200, 230, 250, 150);
+                return ofColor::fromHsb(200, 230, 150, 150);
             } else if (node.maxBranchDepth - node.depth == 2) {
-                return ofColor::fromHsb(220, 200, 200, 200);
+                return ofColor::fromHsb(220, 200, 170, 200);
             } else {
-                return ofColor::fromHsb(70, 255, 240, 170);
+                return ofColor::fromHsb(240, 255, 190, 170);
+            }
+        },
+        [](RenderedTreeNode node) -> ofColor {
+            if (node.maxBranchDepth - node.depth == 0) {
+                return ofColor::fromHsb(90, 240, 230, 200);
+            } else {
+                return ofColor::fromHsb(0, 0, 0, 0);
             }
         }
     };
@@ -301,14 +310,14 @@ void ofApp::draw(){
     drawBuffer.draw(0, 0);
     
     drawBuffer2.begin();
-    ofEnableBlendMode(OF_BLENDMODE_ADD);
+    ofEnableBlendMode(OF_BLENDMODE_SCREEN);
 //    ofClear(0, 0, 0);
     ofTranslate(3*ofGetWidth() / 4, ofGetHeight() / 2);
     ofScale(screenScale, screenScale);
-//    RenderedTreeDrawer::drawAsFatPoints(rendered);
+//    drawer2.drawAsFatPoints(rendered);
     drawer2.drawAsPoints(rendered);
-//    RenderedTreeDrawer::drawAsCircles(rendered);
-//    RenderedTreeDrawer::drawAsLines(rendered);
+//    drawer2.drawAsCircles(rendered);
+//    drawer2.drawAsLines(rendered);
     drawBuffer2.end();
     
     drawBuffer2.draw(0, 0);
