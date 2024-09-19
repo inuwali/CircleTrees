@@ -342,13 +342,13 @@ public:
         if (remainingDepth > 0) {
             float numChildren;
             if (initial) {
-                numChildren = 1;
+                numChildren = 3;
                 for (int i = 0; i < numChildren; i++) {
                     node->children.push_back(generateHelper(remainingDepth - 1, BranchParameters(1, 0, (float)i * 360.0 / numChildren, scale, 0), false));
                 }
             } else {
                 numChildren = (float)remainingDepth;
-                numChildren = 4;
+//                numChildren = 4;
                 for (int i = 1; i <= numChildren; i++) {
                     float a = (float)i * 360.0 / (numChildren * 2) - 360.0 / numChildren;
                     node->children.push_back(generateHelper(remainingDepth - 1, BranchParameters(1, 0, a, scale, 0), false));

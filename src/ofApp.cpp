@@ -85,7 +85,7 @@ void ofApp::setup(){
     screenScale = getRetinaScale();
     ofSetWindowShape(windowWidth * screenScale, windowHeight * screenScale);
 
-    TreeGenerator generator = TreeGenerator(5, windowHeight / 8);
+    TreeGenerator generator = TreeGenerator(6, windowHeight / 8);
     tree = generator.generateTree();
         
     animator = new TreeAnimator(tree);
@@ -317,6 +317,14 @@ void ofApp::setup(){
             } else {
                 return ofColor::fromHsb(0, 0, 0, 0);
             }
+        },
+        [](RenderedTreeNode node) -> ofColor {
+            int distFromLeaf = node.maxBranchDepth - node.depth;
+            if (distFromLeaf < 2) {
+                return ofColor::fromHsb(50, 100, 230, 230);
+            } else {
+                return ofColor::fromHsb(45, 60, 255, 200);
+            }
         }
     };
     
@@ -370,8 +378,8 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     RenderedTree rendered = renderer->render();
-    RenderedTreeDrawer drawer1 = RenderedTreeDrawer(rendered, legacyColorChoosers[0], drawChoosers[0]);
-    RenderedTreeDrawer drawer2 = RenderedTreeDrawer(rendered, colorChoosers[2], drawChoosers[1]);
+    RenderedTreeDrawer drawer1 = RenderedTreeDrawer(rendered, legacyColorChoosers[0]);//, drawChoosers[0]);
+    RenderedTreeDrawer drawer2 = RenderedTreeDrawer(rendered, colorChoosers[4], drawChoosers[1]);
 
     drawBuffer.begin();
     ofEnableBlendMode(OF_BLENDMODE_SCREEN);
