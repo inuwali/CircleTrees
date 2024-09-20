@@ -74,14 +74,18 @@ float diagWave(float frequency, float t, double amplitude = 1.0, double phase = 
     return fabs(sawtoothWave(frequency, t, amplitude, phase, offset) - 0.5) ;
 }
 
+int randInt(int max) {
+    return of::random::uniform(0, max);
+}
+
 //--------------------------------------------------------------
 void ofApp::setup(){
     randomSeed = ofGetSystemTimeMillis();
-    ofSetRandomSeed(randomSeed);
-//    ofSetRandomSeed(334659288);
+//    randomSeed = 385593894;
+    of::random::seed(randomSeed);
 
     cout << "SEED: " << randomSeed << "\n";
-    
+
     windowWidth = 2000;
     windowHeight = 1000;
     screenScale = getRetinaScale();
@@ -252,7 +256,7 @@ void ofApp::setup(){
 //        if (node->children.empty()) {
 //            return animators[2];
 //        } else {
-//            return animators[ofRandom(3)];
+//            return animators[randInt(3)];
 ////            return animators[depth % 3];
 //        }
 //        if (depth % 2 != 0) {
@@ -262,17 +266,17 @@ void ofApp::setup(){
 //        }
 ////        return animators[depth % 3];
 //        if (depth == 3) {
-//            return animators[ofRandom(2)];
+//            return animators[randInt(2)];
 //        } else {
 //            return animators[(depth+2) % 4];
 //        }
-//        return animators[depth %3 + ofRandom(3)];
-//        return animators[3 + ofRandom(3)];
+//        return animators[depth %3 + randInt(3)];
+//        return animators[3 + randInt(3)];
 //        return animators[6];
-//        return animators[ofRandom(2) * 3];
+//        return animators[randInt(2) * 3];
 //        return animators[0];
-        return animators[ofRandom(numAnimators)];
-//        return animators[9 + ofRandom(4)];
+        return animators[randInt(numAnimators)];
+//        return animators[9 + randInt(4)];
 //        return animators[10];
     };
     
@@ -389,7 +393,7 @@ void ofApp::update(){
 void ofApp::draw(){
     RenderedTree rendered = renderer->render();
     RenderedTreeDrawer drawer1 = RenderedTreeDrawer(rendered, legacyColorChoosers[0], drawChoosers[0]);
-    RenderedTreeDrawer drawer2 = RenderedTreeDrawer(rendered, colorChoosers[4], drawChoosers[1]);
+    RenderedTreeDrawer drawer2 = RenderedTreeDrawer(rendered, colorChoosers[1], drawChoosers[3]);
 
     drawBuffer.begin();
     ofEnableBlendMode(OF_BLENDMODE_SCREEN);
