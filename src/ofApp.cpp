@@ -32,6 +32,8 @@ std::vector<BinaryChooser> drawChoosers;
 
 uint64_t randomSeed;
 
+int screenshotCount = 0;
+
 inline float sawtoothWave(float frequency, float t, double amplitude = 1.0, double phase = 0.0, double offset = 0.0) {
 //    float period = 1 / frequency;
 //    int periodFrames = (int)(period * frameRate);
@@ -233,10 +235,15 @@ void ofApp::setup(){
     };
     
     drawChoosers = {
-        [](RenderedTreeNode node) { return node.children.size() == 0; },
+        [](RenderedTreeNode node) { return true; },
+        [](RenderedTreeNode node) { return node.maxBranchDepth == node.depth; }, // Just leaves
         [](RenderedTreeNode node) {
             int distFromLeaf = node.maxBranchDepth - node.depth;
             return distFromLeaf % 3 == 0;
+        },
+        [](RenderedTreeNode node) {
+            int distFromLeaf = node.maxBranchDepth - node.depth;
+            return distFromLeaf < 3;
         }
     };
 
@@ -248,11 +255,11 @@ void ofApp::setup(){
 //            return animators[ofRandom(3)];
 ////            return animators[depth % 3];
 //        }
-        if (depth % 2 != 0) {
-            return animators[4];
-        } else {
-            return animators[9];
-        }
+//        if (depth % 2 != 0) {
+//            return animators[4];
+//        } else {
+//            return animators[9];
+//        }
 ////        return animators[depth % 3];
 //        if (depth == 3) {
 //            return animators[ofRandom(2)];
@@ -264,7 +271,7 @@ void ofApp::setup(){
 //        return animators[6];
 //        return animators[ofRandom(2) * 3];
 //        return animators[0];
-//        return animators[ofRandom(numAnimators)];
+        return animators[ofRandom(numAnimators)];
 //        return animators[9 + ofRandom(4)];
 //        return animators[10];
     };
@@ -281,9 +288,12 @@ void ofApp::setup(){
 //        return animators[2 + (depth + 1) % 2];
     };
     
+//    TreeAnimatorInstaller animatorInstaller = TreeAnimatorInstaller(tree,
+//                                                                    legacyAnimators,
+//                                                                    legacyChooser);
     TreeAnimatorInstaller animatorInstaller = TreeAnimatorInstaller(tree,
-                                                                    legacyAnimators,
-                                                                    legacyChooser);
+                                                                    allAnimators,
+                                                                    chooser);
 
     animatorInstaller.visitAll();
 
@@ -378,7 +388,7 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     RenderedTree rendered = renderer->render();
-    RenderedTreeDrawer drawer1 = RenderedTreeDrawer(rendered, legacyColorChoosers[0]);//, drawChoosers[0]);
+    RenderedTreeDrawer drawer1 = RenderedTreeDrawer(rendered, legacyColorChoosers[0], drawChoosers[0]);
     RenderedTreeDrawer drawer2 = RenderedTreeDrawer(rendered, colorChoosers[4], drawChoosers[1]);
 
     drawBuffer.begin();
@@ -414,7 +424,13 @@ void ofApp::keyPressed(int key) {
     std::stringstream ss;  // Create a stringstream object
     
     // Use the << operator to concatenate values into the stringstream
-    ss << "/Users/owen/Screenshots/openFrameworks/screenshot-" << randomSeed << ".png";
+    ss << "/Users/owen/Screenshots/openFrameworks/screenshot-" << randomSeed;
+    if (screenshotCount > 0) {
+        ss << "-" << screenshotCount;
+    }
+    ss << ".png";
+    
+    screenshotCount += 1;
     
     // Convert the stringstream to a std::string
     std::string filename = ss.str();
