@@ -81,7 +81,7 @@ int randInt(int max) {
 //--------------------------------------------------------------
 void ofApp::setup(){
     randomSeed = ofGetSystemTimeMillis();
-//    randomSeed = 385593894;
+    randomSeed = 34168016;
     of::random::seed(randomSeed);
 
     cout << "SEED: " << randomSeed << "\n";
@@ -91,7 +91,7 @@ void ofApp::setup(){
     screenScale = getRetinaScale();
     ofSetWindowShape(windowWidth * screenScale, windowHeight * screenScale);
 
-    TreeGenerator generator = TreeGenerator(7, windowHeight / 8);
+    TreeGenerator generator = TreeGenerator(5, windowHeight / 8);
     tree = generator.generateTree();
         
     animator = new TreeAnimator(tree);
@@ -274,8 +274,8 @@ void ofApp::setup(){
 //        return animators[3 + randInt(3)];
 //        return animators[6];
 //        return animators[randInt(2) * 3];
-//        return animators[0];
-        return animators[randInt(numAnimators)];
+        return animators[(randInt(3)+1) * 2];
+//        return animators[randInt(numAnimators)];
 //        return animators[9 + randInt(4)];
 //        return animators[10];
     };
@@ -392,11 +392,11 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     RenderedTree rendered = renderer->render();
-    RenderedTreeDrawer drawer1 = RenderedTreeDrawer(rendered, colorChoosers[2], drawChoosers[0]);
-    RenderedTreeDrawer drawer2 = RenderedTreeDrawer(rendered, colorChoosers[1], drawChoosers[3]);
+    RenderedTreeDrawer drawer1 = RenderedTreeDrawer(rendered, colorChoosers[1], drawChoosers[2]);
+    RenderedTreeDrawer drawer2 = RenderedTreeDrawer(rendered, legacyColorChoosers[0], drawChoosers[0]);
 
     drawBuffer.begin();
-    ofEnableBlendMode(OF_BLENDMODE_SCREEN);
+    ofEnableBlendMode(OF_BLENDMODE_ADD);
     ofTranslate(ofGetWidth() / 4, ofGetHeight() / 2);
     ofScale(screenScale, screenScale);
     drawer1.drawAsPoints(rendered);
@@ -405,7 +405,7 @@ void ofApp::draw(){
     drawBuffer.draw(0, 0);
     
     drawBuffer2.begin();
-    ofEnableBlendMode(OF_BLENDMODE_ADD);
+    ofEnableBlendMode(OF_BLENDMODE_SCREEN);
 //    ofClear(0, 0, 0);
     ofTranslate(3*ofGetWidth() / 4, ofGetHeight() / 2);
     ofScale(screenScale, screenScale);
