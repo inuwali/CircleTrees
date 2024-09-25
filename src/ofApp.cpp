@@ -27,9 +27,9 @@ TreesParameters setupParameters() {
     result.renderParameters2 = renderParams2;
     
     HSBFloats bg = HSBFloats();
-    bg.hue = 90;
-    bg.saturation = 15;
-    bg.brightness = 230;
+    bg.hue = 36;
+    bg.saturation = 20;
+    bg.brightness = 235;
     bg.alpha = 255;
     result.backgroundColor = bg;
     
@@ -61,7 +61,6 @@ int windowWidth;
 int windowHeight;
 
 std::vector<ColorChooser> colorChoosers;
-std::vector<ColorChooser> legacyColorChoosers;
 std::vector<BinaryChooser> drawChoosers;
 std::vector<AnimatorChooser> animatorChoosers;
 
@@ -70,12 +69,6 @@ uint64_t randomSeed;
 int screenshotCount = 0;
 
 inline float sawtoothWave(float frequency, float t, double amplitude = 1.0, double phase = 0.0, double offset = 0.0) {
-//    float period = 1 / frequency;
-//    int periodFrames = (int)(period * frameRate);
-//    int frame = (int)t * frameRate;
-//    int val = frame % periodFrames;
-//    return (float)val/(float)periodFrames;
-    
     double period = 1.0 / frequency;
     double timeShift = phase / (2 * PI * frequency); // Convert phase shift from radians to time
     double timeInPeriod = fmod(t + timeShift, period);
@@ -150,6 +143,7 @@ void ofApp::setup() {
     animator = new TreeAnimator(tree);
     
     std::vector<NodeAnimator *> allAnimators = {
+        // 0-1: sawtooth and square
         new NodeAnimator(
                          NodeAnimatorFunctions(nullptr,
                                                nullptr,
@@ -166,6 +160,7 @@ void ofApp::setup() {
                                                [](float v, float d) -> float { return 0.3 + triangleWave(d*1.1, 1) * 0.4; }
                                                )
                          ),
+        // 2-3: some sqrt stuff
         new NodeAnimator(
                          NodeAnimatorFunctions(nullptr,
                                                nullptr,
@@ -182,6 +177,7 @@ void ofApp::setup() {
                                                [](float v, float d) -> float { return 0.1 + cosf(d/20) * 0.1; }
                                                )
                          ),
+        // 4: abs
         new NodeAnimator(
                          NodeAnimatorFunctions(nullptr,
                                                nullptr,
@@ -190,6 +186,7 @@ void ofApp::setup() {
                                                [](float v, float d) -> float { return 0.1 + cosf(d/20) * 0.1; }
                                                )
                          ),
+        // 5-7: including v in the trig functions; manifests as pendulum effect
         new NodeAnimator(
                          NodeAnimatorFunctions(nullptr,
                                                nullptr,
@@ -214,6 +211,7 @@ void ofApp::setup() {
                                                [](float v, float d) -> float { return 0.2 + cosf(d/10) * 0.3; }
                                                )
                          ),
+        // 8-10: Pretty standard functions
         new NodeAnimator(
                          NodeAnimatorFunctions(nullptr,
                                                nullptr,
@@ -238,6 +236,7 @@ void ofApp::setup() {
                                                [](float v, float d) -> float { return 0.2 + cosf(d/10) * 0.3; }
                                                )
                          ),
+        // 11: Only simple counterclockwise rotation
         new NodeAnimator(
                          NodeAnimatorFunctions(nullptr,
                                                nullptr,
@@ -246,6 +245,7 @@ void ofApp::setup() {
                                                nullptr
                                                )
                          ),
+        // 12: Pretty standard function
         new NodeAnimator(
                          NodeAnimatorFunctions(nullptr,
                                                nullptr,
@@ -254,7 +254,7 @@ void ofApp::setup() {
                                                [](float v, float d) -> float { return 0.1 + sinf(d) * 0.4; }
                                                )
                          ),
-        // LEGACY animators below
+        // 12-15: LEGACY animators below; pretty standard stuff.
         new NodeAnimator(
                          NodeAnimatorFunctions(nullptr,
                                                nullptr,
