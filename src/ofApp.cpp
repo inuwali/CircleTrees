@@ -1,13 +1,56 @@
 #include "ofApp.h"
+#include "ofJson.h"
 #include "Trees.hpp"
+#include "Parameters.hpp"
 #include <stdio.h>
 #include <math.h>
 #include <sstream>  // For std::stringstream
+
+// 0-1: sawtooth and square
+// 2-3: some sqrt stuff
+// 4: abs
+// 5-7: including v in the trig functions; manifests as pendulum effect
+// 8-10: Pretty standard functions
+// 11: Only simple counterclockwise rotation
+// 12: Pretty standard function
+// 12-15: LEGACY animators below; pretty standard stuff.
+
+uint64_t fileToLoad = 0;
+
+TreesParameters setupParameters() {
+    TreesParameters result = TreesParameters();
+    
+    result.treeDepth = 6;
+    result.animatorChooserIndex = 12;
+    
+    TreeRenderParameters renderParams1 = TreeRenderParameters();
+    renderParams1.drawChooserIndex = 0;
+    renderParams1.colorChooserIndex = 6;
+    renderParams1.blendMode = OF_BLENDMODE_SCREEN;
+    TreeRenderParameters renderParams2 = TreeRenderParameters();
+    renderParams2.drawChooserIndex = 0;
+    renderParams2.colorChooserIndex = 6;
+    renderParams2.blendMode = OF_BLENDMODE_DISABLED;
+    
+    result.renderParameters1 = renderParams1;
+    result.renderParameters2 = renderParams2;
+    
+    HSBFloats bg = HSBFloats();
+    bg.hue = 36;
+    bg.saturation = 20;
+    bg.brightness = 235;
+    bg.alpha = 255;
+    result.backgroundColor = bg;
+    
+    return result;
+}
 
 Tree *tree;
 TreeAnimator *animator;
 TreeRenderer *renderer;
 int frameRate = 120;
+
+TreesParameters params;
 
 ofFbo drawBuffer;
 ofFbo drawBuffer2;
@@ -26,15 +69,15 @@ int screenScale;
 int windowWidth;
 int windowHeight;
 
+std::vector<ColorChooser> colorChoosers;
+std::vector<BinaryChooser> drawChoosers;
+std::vector<AnimatorChooser> animatorChoosers;
+
 uint64_t randomSeed;
 
+int screenshotCount = 0;
+
 inline float sawtoothWave(float frequency, float t, double amplitude = 1.0, double phase = 0.0, double offset = 0.0) {
-//    float period = 1 / frequency;
-//    int periodFrames = (int)(period * frameRate);
-//    int frame = (int)t * frameRate;
-//    int val = frame % periodFrames;
-//    return (float)val/(float)periodFrames;
-    
     double period = 1.0 / frequency;
     double timeShift = phase / (2 * PI * frequency); // Convert phase shift from radians to time
     double timeInPeriod = fmod(t + timeShift, period);
@@ -68,35 +111,65 @@ float diagWave(float frequency, float t, double amplitude = 1.0, double phase = 
     return fabs(sawtoothWave(frequency, t, amplitude, phase, offset) - 0.5) ;
 }
 
+int randInt(int max) {
+    return of::random::uniform(0, max);
+}
+
 //--------------------------------------------------------------
-void ofApp::setup(){
-    randomSeed = ofGetSystemTimeMillis();
-    ofSetRandomSeed(randomSeed);
+void ofApp::setup() {
+    params = TreesParameters();
     
-    cout << "SEED: " << randomSeed << "\n";
+    if (fileToLoad > 0) {
+        std::stringstream ss;  // Create a stringstream object
+        
+        ss << "/Users/owen/Programming/OpenFrameworks/CircleTrees/Artifacts/" << fileToLoad << "-params.json" ;
+        std::string paramsJsonFilename = ss.str();
+        
+        params = TreesParameters::fromFile(paramsJsonFilename);
+    }
     
+    if (params.randomSeed > 0) {
+        randomSeed = params.randomSeed;
+    } else {
+        randomSeed = params.timestamp;
+        params.randomSeed = randomSeed;
+    }
+    
+    of::random::seed(randomSeed);
+
+    if (fileToLoad == 0) {
+        params = setupParameters();
+    }
+
     windowWidth = 2000;
     windowHeight = 1000;
     screenScale = getRetinaScale();
     ofSetWindowShape(windowWidth * screenScale, windowHeight * screenScale);
 
-    TreeGenerator generator = TreeGenerator(5, windowHeight / 8);
+    TreeGenerator generator = TreeGenerator(params.treeDepth, windowHeight / 8);
     tree = generator.generateTree();
         
     animator = new TreeAnimator(tree);
     
     std::vector<NodeAnimator *> allAnimators = {
+        // 0-1: sawtooth and square
         new NodeAnimator(
                          NodeAnimatorFunctions(nullptr,
                                                nullptr,
                                                [](float v, float d) -> float { return v + 1; },
-//                                               nullptr,
-//                                               [](float v, float d) -> float { return ; },
-                                               nullptr,
-                                               [](float v, float d) -> float { return 0.3 + triangleWave(d*1.1, 1) * 0.4; }
-//                                               [](float v, float d) -> float { return 0.3 + sin(d * 2*PI) * 0.4; }
+                                               [](float v, float d) -> float { return 0.1 + cosf(d/20) * 0.1; },
+                                               [](float v, float d) -> float { return 0.3 + sawtoothWave(d*1.1, 1) * 0.4; }
                                                )
                          ),
+        new NodeAnimator(
+                         NodeAnimatorFunctions(nullptr,
+                                               nullptr,
+                                               [](float v, float d) -> float { return v + 1; },
+                                               nullptr,
+                                               [](float v, float d) -> float { return 0.3 + triangleWave(d*1.1, 1) * 0.4; }
+                                               )
+                         ),
+        // 2-3: some sqrt stuff
         new NodeAnimator(
                          NodeAnimatorFunctions(nullptr,
                                                nullptr,
@@ -113,6 +186,7 @@ void ofApp::setup(){
                                                [](float v, float d) -> float { return 0.1 + cosf(d/20) * 0.1; }
                                                )
                          ),
+        // 4: abs
         new NodeAnimator(
                          NodeAnimatorFunctions(nullptr,
                                                nullptr,
@@ -121,6 +195,7 @@ void ofApp::setup(){
                                                [](float v, float d) -> float { return 0.1 + cosf(d/20) * 0.1; }
                                                )
                          ),
+        // 5-7: including v in the trig functions; manifests as pendulum effect
         new NodeAnimator(
                          NodeAnimatorFunctions(nullptr,
                                                nullptr,
@@ -145,6 +220,7 @@ void ofApp::setup(){
                                                [](float v, float d) -> float { return 0.2 + cosf(d/10) * 0.3; }
                                                )
                          ),
+        // 8-10: Pretty standard functions
         new NodeAnimator(
                          NodeAnimatorFunctions(nullptr,
                                                nullptr,
@@ -169,6 +245,7 @@ void ofApp::setup(){
                                                [](float v, float d) -> float { return 0.2 + cosf(d/10) * 0.3; }
                                                )
                          ),
+        // 11: Only simple counterclockwise rotation
         new NodeAnimator(
                          NodeAnimatorFunctions(nullptr,
                                                nullptr,
@@ -177,6 +254,7 @@ void ofApp::setup(){
                                                nullptr
                                                )
                          ),
+        // 12: Pretty standard function
         new NodeAnimator(
                          NodeAnimatorFunctions(nullptr,
                                                nullptr,
@@ -184,41 +262,208 @@ void ofApp::setup(){
                                                [](float v, float d) -> float { return 0.1 + cosf(d/20) * 0.1; },
                                                [](float v, float d) -> float { return 0.1 + sinf(d) * 0.4; }
                                                )
+                         ),
+        // 12-15: LEGACY animators below; pretty standard stuff.
+        new NodeAnimator(
+                         NodeAnimatorFunctions(nullptr,
+                                               nullptr,
+                                               [](float v, float d) -> float { return v + 0.5; },
+                                               [](float v, float d) -> float { return 0.4 + sinf(d) * 0.1; },
+                                               [](float v, float d) -> float { return 0.1 + cosf(d) * 0.1; }
+                                               )
+                         ),
+        new NodeAnimator(
+                         NodeAnimatorFunctions(nullptr,
+                                               nullptr,
+                                               [](float v, float d) -> float { return v - 1; },
+                                               [](float v, float d) -> float { return 0.3 + sinf(d/2) * 0.1; },
+                                               [](float v, float d) -> float { return -0.3 + cosf(d*3) * 0.6; }
+                                               )
+                         ),
+        new NodeAnimator(
+                         NodeAnimatorFunctions(nullptr,
+                                               nullptr,
+                                               [](float v, float d) -> float { return v + 2; },
+                                               [](float v, float d) -> float { return 0.5 + sinf(v) * 0.1; },
+                                               [](float v, float d) -> float { return 0.2 + cosf(d*10) * 0.3; }
+                                               )
+                         ),
+        new NodeAnimator(
+                         NodeAnimatorFunctions(nullptr,
+                                               nullptr,
+                                               [](float v, float d) -> float { return v + 2.5; },
+                                               [](float v, float d) -> float { return 0.5 + sinf(d*2) * 0.4; },
+                                               [](float v, float d) -> float { return 0.2 + cosf(d*5) * 0.4; }
+                                               )
                          )
     };
     
-    AnimatorChooser chooser = [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
-        int numAnimators = animators.size();
-//        if (node->children.empty()) {
-//            return animators[2];
-//        } else {
-//            return animators[ofRandom(3)];
-////            return animators[depth % 3];
-//        }
-//        if (depth % 2 == 0) {
-//            return animators[ofRandom(8)];
-//        } else {
-//            return animators[3];
-//        }
-////        return animators[depth % 3];
-//        if (depth == 2) {
-//            return animators[ofRandom(3)];
-//        } else {
-//            return animators[depth % 3];
-//        }
-//        return animators[depth %3 + ofRandom(3)];
-//        return animators[3 + ofRandom(3)];
-//        return animators[6];
-//        return animators[ofRandom(2) * 3];
-//        return animators[0];
-        return animators[ofRandom(numAnimators)];
+    drawChoosers = {
+        [](RenderedTreeNode node) { return true; },
+        [](RenderedTreeNode node) { return node.maxBranchDepth == node.depth; }, // Just leaves
+        [](RenderedTreeNode node) {
+            int distFromLeaf = node.maxBranchDepth - node.depth;
+            return distFromLeaf % 3 == 0;
+        },
+        [](RenderedTreeNode node) {
+            int distFromLeaf = node.maxBranchDepth - node.depth;
+            return distFromLeaf < 3;
+        }
     };
-    
+
+    animatorChoosers = {
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            int numAnimators = animators.size();
+            if (node->children.empty()) {
+                return animators[4];
+            } else {
+                return animators[depth % 3 + 3];
+            }
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            int numAnimators = animators.size();
+            if (node->children.empty()) {
+                return animators[4];
+            } else {
+                return animators[randInt(3)];
+            }
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            if (depth % 2 != 0) {
+                return animators[4];
+            } else {
+                return animators[9];
+            }
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            return animators[depth % 3];
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            if (depth == 3) {
+                return animators[randInt(2)];
+            } else {
+                return animators[(depth+2) % 4];
+            }
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            return animators[depth % 3 + randInt(3)];
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            return animators[3 + randInt(3)];
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            return animators[6];
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            return animators[randInt(2) * 3];
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            return animators[(randInt(3)+1) * 2];
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            int numAnimators = animators.size();
+            return animators[randInt(numAnimators)];
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            return animators[9 + randInt(4)];
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            return animators[10];
+        },
+        // LEGACY choosers below
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            int numAnimators = animators.size();
+            return animators[depth % numAnimators];
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            int numAnimators = animators.size();
+            if (node->children.empty()) {
+                return animators[3];
+            } else {
+                return animators[depth % numAnimators];
+            }
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            return animators[2 + (depth + 1) % 2];
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            int numAnimators = animators.size();
+            return animators[abs(numAnimators - depth) % numAnimators];
+        }
+    };
+        
     TreeAnimatorInstaller animatorInstaller = TreeAnimatorInstaller(tree,
                                                                     allAnimators,
-                                                                    chooser);
+                                                                    animatorChoosers[params.animatorChooserIndex]);
 
     animatorInstaller.visitAll();
+
+    colorChoosers = {
+        [](RenderedTreeNode node) -> ofColor { return node.color; },
+        [](RenderedTreeNode node) -> ofColor {
+            if (node.maxBranchDepth - node.depth == 0) {
+                return ofColor::fromHsb(150, 240, 230, 100);
+            } else if (node.maxBranchDepth - node.depth == 1) {
+                return ofColor::fromHsb(170, 230, 250, 150);
+            } else if (node.maxBranchDepth - node.depth == 2) {
+                return ofColor::fromHsb(190, 200, 200, 200);
+            } else {
+                return ofColor::fromHsb(25, 255, 240, 255);
+            }
+        },
+        [](RenderedTreeNode node) -> ofColor {
+            if (node.maxBranchDepth - node.depth == 0) {
+                return ofColor::fromHsb(90, 240, 120, 140);
+            } else if (node.maxBranchDepth - node.depth == 1) {
+                return ofColor::fromHsb(200, 230, 150, 150);
+            } else if (node.maxBranchDepth - node.depth == 2) {
+                return ofColor::fromHsb(220, 200, 170, 200);
+            } else {
+                return ofColor::fromHsb(240, 255, 190, 170);
+            }
+        },
+        [](RenderedTreeNode node) -> ofColor {
+            if (node.maxBranchDepth - node.depth == 0) {
+                return ofColor::fromHsb(90, 240, 230, 200);
+            } else {
+                return ofColor::fromHsb(0, 0, 0, 0);
+            }
+        },
+        [](RenderedTreeNode node) -> ofColor {
+            int distFromLeaf = node.maxBranchDepth - node.depth;
+            if (distFromLeaf < 2) {
+                return ofColor::fromHsb(50, 100, 230, 230);
+            } else {
+                return ofColor::fromHsb(45, 60, 255, 200);
+            }
+        },
+        // 5: LEGACY original(ish) chooser
+        [](RenderedTreeNode node) -> ofColor {
+            int maxDepth = node.maxBranchDepth;
+            int currentDepth = node.depth;
+            if (maxDepth - currentDepth == 0) {
+                return ofColor(255, 200, 200, 200);
+            } else if (maxDepth - currentDepth == 1) {
+                return ofColor(255, 200, 0, 220);
+            } else if (maxDepth - currentDepth == 2) {
+                return ofColor(255, 0, 0, 240);
+            } else {
+                return ofColor(255, 120, 100);
+            }
+        },
+        // 6: Green/brown
+        [](RenderedTreeNode node) -> ofColor {
+            if (node.maxBranchDepth - node.depth == 0) {
+                return ofColor::fromHsb(50, 240, 120, 240);
+            } else if (node.maxBranchDepth - node.depth == 1) {
+                return ofColor::fromHsb(45, 210, 200, 170);
+            } else if (node.maxBranchDepth - node.depth == 2) {
+                return ofColor::fromHsb(15, 250, 100, 200);
+            } else {
+                return ofColor::fromHsb(30, 255, 190, 170);
+            }
+        },
+    };
     
     renderer = new TreeRenderer(tree);
     
@@ -243,8 +488,7 @@ void ofApp::setup(){
 //    ofSetColor(200,200,220,200);
 //        ofSetColor(255, 0, 0, 50);
     ofFill();
-    ofBackground(255, 255, 255);
-
+    ofBackground(ofColor::fromHsb(params.backgroundColor.hue, params.backgroundColor.saturation, params.backgroundColor.brightness, params.backgroundColor.alpha));
 }
 
 //--------------------------------------------------------------
@@ -255,25 +499,28 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     RenderedTree rendered = renderer->render();
-    
+    RenderedTreeDrawer drawer1 = RenderedTreeDrawer(rendered, colorChoosers[params.renderParameters1.colorChooserIndex], drawChoosers[params.renderParameters1.drawChooserIndex]);
+    RenderedTreeDrawer drawer2 = RenderedTreeDrawer(rendered, colorChoosers[params.renderParameters2.colorChooserIndex], drawChoosers[params.renderParameters2.drawChooserIndex]);
+
     drawBuffer.begin();
-    ofEnableBlendMode(OF_BLENDMODE_SCREEN);
+    ofEnableBlendMode(params.renderParameters1.blendMode);
     ofTranslate(ofGetWidth() / 4, ofGetHeight() / 2);
     ofScale(screenScale, screenScale);
-    RenderedTreeDrawer::drawAsPoints(rendered);
+    drawer1.drawAsPoints(rendered);
     drawBuffer.end();
     
     drawBuffer.draw(0, 0);
     
     drawBuffer2.begin();
-    ofEnableBlendMode(OF_BLENDMODE_ADD);
+    ofEnableBlendMode(params.renderParameters2.blendMode);
 //    ofClear(0, 0, 0);
     ofTranslate(3*ofGetWidth() / 4, ofGetHeight() / 2);
+//    ofTranslate(ofGetWidth() / 4 + 400, ofGetHeight() / 2);
     ofScale(screenScale, screenScale);
-//    RenderedTreeDrawer::drawAsFatPoints(rendered);
-    RenderedTreeDrawer::drawAsPoints(rendered);
-//    RenderedTreeDrawer::drawAsCircles(rendered);
-//    RenderedTreeDrawer::drawAsLines(rendered);
+//    drawer2.drawAsFatPoints(rendered);
+    drawer2.drawAsPoints(rendered);
+//    drawer2.drawAsCircles(rendered);
+//    drawer2.drawAsLines(rendered);
     drawBuffer2.end();
     
     drawBuffer2.draw(0, 0);
@@ -289,34 +536,49 @@ void ofApp::keyPressed(int key) {
     std::stringstream ss;  // Create a stringstream object
     
     // Use the << operator to concatenate values into the stringstream
-    ss << "/Users/owen/Screenshots/openFrameworks/screenshot-" << randomSeed << ".png";
-    
+    ss << "/Users/owen/Programming/OpenFrameworks/CircleTrees/Artifacts/" << params.timestamp << "-screenshot" ;
+    if (screenshotCount > 0) {
+        ss << "-" << screenshotCount;
+    }
+    ss << ".png";
+        
     // Convert the stringstream to a std::string
-    std::string filename = ss.str();
+    std::string screenshotFilename = ss.str();
+    
+    std::stringstream ss2;  // Create a stringstream object
 
+    ss2 << "/Users/owen/Programming/OpenFrameworks/CircleTrees/Artifacts/" << params.timestamp << "-params.json" ;
+    std::string paramsJsonFilename = ss2.str();
+    
     if (key == 's') {
+        if (screenshotCount == 0) {
+            ofSavePrettyJson(paramsJsonFilename, params.jsonRepresentation());
+        }
+
         ofImage screenImage;
         screenImage.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
-        screenImage.save(filename);  // Save the screenshot
+        screenImage.save(screenshotFilename);  // Save the screenshot
         ofLog() << "Screenshot saved!";
+        
+        screenshotCount += 1;
     }
-    if (key == 'l') {
-        ofPixels pixels;
-        drawBuffer.readToPixels(pixels);
-        ofImage image;
-        image.setFromPixels(pixels);
-        image.save("/Users/owen/Screenshots/openFrameworks/screenshot.png");
+//    if (key == 'l') {
+//        ofPixels pixels;
+//        drawBuffer.readToPixels(pixels);
+//        ofImage image;
+//        image.setFromPixels(pixels);
+//        image.save("/Users/owen/Screenshots/openFrameworks/screenshot.png");
+////        ofImage screenImage;
+////        screenImage.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
+////        screenImage.save("/Users/owen/Desktop/screenshot.png");  // Save the screenshot
+//        ofLog() << "Screenshot saved!";
+//    }
+//    if (key == 'r') {
 //        ofImage screenImage;
 //        screenImage.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
 //        screenImage.save("/Users/owen/Desktop/screenshot.png");  // Save the screenshot
-        ofLog() << "Screenshot saved!";
-    }
-    if (key == 'r') {
-        ofImage screenImage;
-        screenImage.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
-        screenImage.save("/Users/owen/Desktop/screenshot.png");  // Save the screenshot
-        ofLog() << "Screenshot saved!";
-    }
+//        ofLog() << "Screenshot saved!";
+//    }
 }
 
 //--------------------------------------------------------------
