@@ -1,170 +1,47 @@
 #include "ofApp.h"
 #include "ofJson.h"
 #include "Trees.hpp"
+#include "Parameters.hpp"
 #include <stdio.h>
 #include <math.h>
 #include <sstream>  // For std::stringstream
 
-struct HSBFloats {
-    float hue;
-    float saturation;
-    float brightness;
-    float alpha;
-    
-    HSBFloats(): hue(255), saturation(255), brightness(255), alpha(255) {}
-    
-    static HSBFloats fromJson(ofJson json) {
-        HSBFloats result = HSBFloats();
-        
-        try {
-            result.hue = json["hue"];
-        } catch (const ofJson::type_error& e) { }
-        try {
-            result.saturation = json["saturation"];
-        } catch (const ofJson::type_error& e) { }
-        try {
-            result.brightness = json["brightness"];
-        } catch (const ofJson::type_error& e) { }
-        try {
-            result.alpha = json["alpha"];
-        } catch (const ofJson::type_error& e) { }
+uint64_t fileToLoad = 0;
 
-        return result;
-    }
+TreesParameters setupParameters() {
+    TreesParameters result = TreesParameters();
     
-    ofJson jsonRepresentation() {
-        ofJson json;
-        
-        json = {{"hue", hue}};
-        json += {"saturation", saturation};
-        json += {"brightness", brightness};
-        json += {"alpha", alpha};
-        
-        return json;
-    }
-};
-
-struct TreeRenderParameters {
-    int drawChooserIndex;
-    int colorChooserIndex;
-    ofBlendMode blendMode;
+    result.treeDepth = 5;
+    result.animatorChooserIndex = 0;
     
-    TreeRenderParameters():
-    drawChooserIndex(0),
-    colorChooserIndex(0),
-    blendMode(OF_BLENDMODE_DISABLED) {}
+    TreeRenderParameters renderParams1 = TreeRenderParameters();
+    renderParams1.drawChooserIndex = 0;
+    renderParams1.colorChooserIndex = 1;
+    renderParams1.blendMode = OF_BLENDMODE_SCREEN;
+    TreeRenderParameters renderParams2 = TreeRenderParameters();
+    renderParams2.drawChooserIndex = 2;
+    renderParams2.colorChooserIndex = 2;
+    renderParams2.blendMode = OF_BLENDMODE_SCREEN;
     
-    TreeRenderParameters(std::string filePath):
-    drawChooserIndex(0),
-    colorChooserIndex(0),
-    blendMode(OF_BLENDMODE_DISABLED) {}
+    result.renderParameters1 = renderParams1;
+    result.renderParameters2 = renderParams2;
     
-    static TreeRenderParameters fromJson(ofJson json) {
-        TreeRenderParameters params = TreeRenderParameters();
-        
-        try {
-            params.drawChooserIndex = json["drawChooserIndex"];
-        } catch (const ofJson::type_error& e) { }
-        try {
-            params.colorChooserIndex = json["colorChooserIndex"];
-        } catch (const ofJson::type_error& e) { }
-        try {
-            params.blendMode = json["blendMode"];
-        } catch (const ofJson::type_error& e) { }
-        
-        return params;
-    }
+    HSBFloats bg = HSBFloats();
+    bg.hue = 90;
+    bg.saturation = 15;
+    bg.brightness = 230;
+    bg.alpha = 255;
+    result.backgroundColor = bg;
     
-    ofJson jsonRepresentation() {
-        ofJson json;
-        
-        json = {{"drawChooserIndex", drawChooserIndex}};
-        json += {"colorChooserIndex", colorChooserIndex};
-        json += {"blendMode", blendMode};
-        
-        return json;
-    }
-};
-
-
-struct TreesParameters {
-    uint64_t randomSeed;
-    int treeDepth;
-    int animatorChooserIndex;
-    TreeRenderParameters renderParameters1;
-    TreeRenderParameters renderParameters2;
-    HSBFloats backgroundColor;
-    
-    TreesParameters():
-    randomSeed(0),
-    treeDepth(3),
-    animatorChooserIndex(0),
-    renderParameters1(TreeRenderParameters()),
-    renderParameters2(TreeRenderParameters()),
-    backgroundColor(HSBFloats()) {}
-    
-    TreesParameters(std::string filePath):
-    randomSeed(0),
-    treeDepth(3),
-    animatorChooserIndex(0),
-    renderParameters1(TreeRenderParameters()),
-    renderParameters2(TreeRenderParameters()),
-    backgroundColor(HSBFloats()) {
-    }
-    
-    static TreesParameters fromFile(std::string filePath) {
-        TreesParameters params = TreesParameters();
-        
-        ofJson json = ofLoadJson(filePath);
-        
-        try {
-            params.randomSeed = json["randomSeed"];
-        } catch (const ofJson::type_error& e) { }
-        try {
-            params.treeDepth = json["treeDepth"];
-        } catch (const ofJson::type_error& e) { }
-        try {
-            params.animatorChooserIndex = json["animatorChooserIndex"];
-        } catch (const ofJson::type_error& e) { }
-        try {
-//            ofJson rps = json["renderParameters"];
-//            params.renderParameters1 = TreeRenderParameters::fromJson(rps.at(0));
-            params.renderParameters1 = TreeRenderParameters::fromJson(json["renderParameters1"]);
-            params.renderParameters2 = TreeRenderParameters::fromJson(json["renderParameters2"]);
-//            params.renderParameters = json["renderParameters"];
-//            for (auto& rp : json["renderParameters"].items()) {
-//                params.renderParameters.push_back(rp.value().template get<TreeRenderParameters>());
-//            }
-        } catch (const ofJson::type_error& e) { }
-        try {
-            params.backgroundColor = HSBFloats::fromJson(json["backgroundColor"]);
-        } catch (const ofJson::type_error& e) { }
-        
-        return params;
-    }
-    
-    ofJson jsonRepresentation() {
-        ofJson json;
-        
-        json = {{"randomSeed", randomSeed}};
-        json += {"treeDepth", treeDepth};
-        json += {"animatorChooserIndex", animatorChooserIndex};
-        json += {"renderParameters1", renderParameters1.jsonRepresentation()};
-        json += {"renderParameters2", renderParameters2.jsonRepresentation()};
-        json += {"backgroundColor", backgroundColor.jsonRepresentation()};
-        json += {"renderParameters", {renderParameters1.jsonRepresentation(), renderParameters2.jsonRepresentation()}};
-
-        return json;
-    }
-};
+    return result;
+}
 
 Tree *tree;
 TreeAnimator *animator;
 TreeRenderer *renderer;
 int frameRate = 120;
 
-TreesParameters params1;
-TreesParameters params2;
+TreesParameters params;
 
 ofFbo drawBuffer;
 ofFbo drawBuffer2;
@@ -238,62 +115,36 @@ int randInt(int max) {
 
 //--------------------------------------------------------------
 void ofApp::setup() {
-    ofJson test = ofLoadJson("/Users/owen/Desktop/test.json");
+    params = TreesParameters();
     
-    cout << test["a"] << "\n";
+    if (fileToLoad > 0) {
+        std::stringstream ss;  // Create a stringstream object
+        
+        ss << "/Users/owen/Programming/OpenFrameworks/CircleTrees/Artifacts/" << fileToLoad << "-params.json" ;
+        std::string paramsJsonFilename = ss.str();
+        
+        params = TreesParameters::fromFile(paramsJsonFilename);
+    }
     
-//    TreesParameters testP = readFrom("/Users/owen/Desktop/testout.json");
-    TreesParameters testP = TreesParameters::fromFile("/Users/owen/Desktop/testout.json");
-    cout << testP.randomSeed << "\n";
+    if (params.randomSeed > 0) {
+        randomSeed = params.randomSeed;
+    } else {
+        randomSeed = params.timestamp;
+        params.randomSeed = randomSeed;
+    }
     
-    randomSeed = ofGetSystemTimeMillis();
-    randomSeed = 1;
     of::random::seed(randomSeed);
 
-//    ofJson obj;
-////    obj += ofJson::object_t::value_type("randomSeed", randomSeed);
-////    obj.push_back({{"randomSeed", randomSeed}});
-////    obj = {{"randomSeed", randomSeed}};
-//    obj = {{"", ""}};
-//    obj += {"randomSeed", randomSeed};
-//    obj += {"treeDepth", 6};
-//    
-//    ofSaveJson("/Users/owen/Desktop/testout.json", obj);
-
-    cout << "SEED: " << randomSeed << "\n";
-    
-    params1.randomSeed = randomSeed;
-    params1.treeDepth = 6;
-    params1.animatorChooserIndex = 5;
-    
-    TreeRenderParameters renderParams1 = TreeRenderParameters();
-    renderParams1.drawChooserIndex = 0;
-    renderParams1.colorChooserIndex = 1;
-    renderParams1.blendMode = OF_BLENDMODE_ADD;
-    TreeRenderParameters renderParams2 = TreeRenderParameters();
-    renderParams2.drawChooserIndex = 2;
-    renderParams2.colorChooserIndex = 5;
-    renderParams2.blendMode = OF_BLENDMODE_SCREEN;
-    
-    params1.renderParameters1 = renderParams1;
-    params1.renderParameters2 = renderParams2;
-
-    ofSavePrettyJson("/Users/owen/Desktop/paramsout.json", params1.jsonRepresentation());
-    
-    HSBFloats bgColor;
-    bgColor.hue = 0;
-    bgColor.saturation = 0;
-    bgColor.brightness = 255;
-    bgColor.alpha = 255;
-    
-    params1.backgroundColor = bgColor;
+    if (fileToLoad == 0) {
+        params = setupParameters();
+    }
 
     windowWidth = 2000;
     windowHeight = 1000;
     screenScale = getRetinaScale();
     ofSetWindowShape(windowWidth * screenScale, windowHeight * screenScale);
 
-    TreeGenerator generator = TreeGenerator(params1.treeDepth, windowHeight / 8);
+    TreeGenerator generator = TreeGenerator(params.treeDepth, windowHeight / 8);
     tree = generator.generateTree();
         
     animator = new TreeAnimator(tree);
@@ -534,7 +385,7 @@ void ofApp::setup() {
         
     TreeAnimatorInstaller animatorInstaller = TreeAnimatorInstaller(tree,
                                                                     allAnimators,
-                                                                    animatorChoosers[params1.animatorChooserIndex]);
+                                                                    animatorChoosers[params.animatorChooserIndex]);
 
     animatorInstaller.visitAll();
 
@@ -616,7 +467,7 @@ void ofApp::setup() {
 //    ofSetColor(200,200,220,200);
 //        ofSetColor(255, 0, 0, 50);
     ofFill();
-    ofBackground(ofColor::fromHsb(params1.backgroundColor.hue, params1.backgroundColor.saturation, params1.backgroundColor.brightness, params1.backgroundColor.alpha));
+    ofBackground(ofColor::fromHsb(params.backgroundColor.hue, params.backgroundColor.saturation, params.backgroundColor.brightness, params.backgroundColor.alpha));
 }
 
 //--------------------------------------------------------------
@@ -627,11 +478,11 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     RenderedTree rendered = renderer->render();
-    RenderedTreeDrawer drawer1 = RenderedTreeDrawer(rendered, colorChoosers[params1.renderParameters1.colorChooserIndex], drawChoosers[params1.renderParameters1.drawChooserIndex]);
-    RenderedTreeDrawer drawer2 = RenderedTreeDrawer(rendered, colorChoosers[params1.renderParameters2.colorChooserIndex], drawChoosers[params1.renderParameters2.drawChooserIndex]);
+    RenderedTreeDrawer drawer1 = RenderedTreeDrawer(rendered, colorChoosers[params.renderParameters1.colorChooserIndex], drawChoosers[params.renderParameters1.drawChooserIndex]);
+    RenderedTreeDrawer drawer2 = RenderedTreeDrawer(rendered, colorChoosers[params.renderParameters2.colorChooserIndex], drawChoosers[params.renderParameters2.drawChooserIndex]);
 
     drawBuffer.begin();
-    ofEnableBlendMode(params1.renderParameters1.blendMode);
+    ofEnableBlendMode(params.renderParameters1.blendMode);
     ofTranslate(ofGetWidth() / 4, ofGetHeight() / 2);
     ofScale(screenScale, screenScale);
     drawer1.drawAsPoints(rendered);
@@ -640,7 +491,7 @@ void ofApp::draw(){
     drawBuffer.draw(0, 0);
     
     drawBuffer2.begin();
-    ofEnableBlendMode(params1.renderParameters2.blendMode);
+    ofEnableBlendMode(params.renderParameters2.blendMode);
 //    ofClear(0, 0, 0);
     ofTranslate(3*ofGetWidth() / 4, ofGetHeight() / 2);
     ofScale(screenScale, screenScale);
@@ -663,40 +514,49 @@ void ofApp::keyPressed(int key) {
     std::stringstream ss;  // Create a stringstream object
     
     // Use the << operator to concatenate values into the stringstream
-    ss << "/Users/owen/Screenshots/openFrameworks/screenshot-" << randomSeed;
+    ss << "/Users/owen/Programming/OpenFrameworks/CircleTrees/Artifacts/" << params.timestamp << "-screenshot" ;
     if (screenshotCount > 0) {
         ss << "-" << screenshotCount;
     }
     ss << ".png";
-    
-    screenshotCount += 1;
-    
+        
     // Convert the stringstream to a std::string
-    std::string filename = ss.str();
+    std::string screenshotFilename = ss.str();
+    
+    std::stringstream ss2;  // Create a stringstream object
 
+    ss2 << "/Users/owen/Programming/OpenFrameworks/CircleTrees/Artifacts/" << params.timestamp << "-params.json" ;
+    std::string paramsJsonFilename = ss2.str();
+    
     if (key == 's') {
+        if (screenshotCount == 0) {
+            ofSavePrettyJson(paramsJsonFilename, params.jsonRepresentation());
+        }
+
         ofImage screenImage;
         screenImage.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
-        screenImage.save(filename);  // Save the screenshot
+        screenImage.save(screenshotFilename);  // Save the screenshot
         ofLog() << "Screenshot saved!";
+        
+        screenshotCount += 1;
     }
-    if (key == 'l') {
-        ofPixels pixels;
-        drawBuffer.readToPixels(pixels);
-        ofImage image;
-        image.setFromPixels(pixels);
-        image.save("/Users/owen/Screenshots/openFrameworks/screenshot.png");
+//    if (key == 'l') {
+//        ofPixels pixels;
+//        drawBuffer.readToPixels(pixels);
+//        ofImage image;
+//        image.setFromPixels(pixels);
+//        image.save("/Users/owen/Screenshots/openFrameworks/screenshot.png");
+////        ofImage screenImage;
+////        screenImage.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
+////        screenImage.save("/Users/owen/Desktop/screenshot.png");  // Save the screenshot
+//        ofLog() << "Screenshot saved!";
+//    }
+//    if (key == 'r') {
 //        ofImage screenImage;
 //        screenImage.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
 //        screenImage.save("/Users/owen/Desktop/screenshot.png");  // Save the screenshot
-        ofLog() << "Screenshot saved!";
-    }
-    if (key == 'r') {
-        ofImage screenImage;
-        screenImage.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
-        screenImage.save("/Users/owen/Desktop/screenshot.png");  // Save the screenshot
-        ofLog() << "Screenshot saved!";
-    }
+//        ofLog() << "Screenshot saved!";
+//    }
 }
 
 //--------------------------------------------------------------
