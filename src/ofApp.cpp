@@ -1,13 +1,170 @@
 #include "ofApp.h"
+#include "ofJson.h"
 #include "Trees.hpp"
 #include <stdio.h>
 #include <math.h>
 #include <sstream>  // For std::stringstream
 
+struct HSBFloats {
+    float hue;
+    float saturation;
+    float brightness;
+    float alpha;
+    
+    HSBFloats(): hue(255), saturation(255), brightness(255), alpha(255) {}
+    
+    static HSBFloats fromJson(ofJson json) {
+        HSBFloats result = HSBFloats();
+        
+        try {
+            result.hue = json["hue"];
+        } catch (const ofJson::type_error& e) { }
+        try {
+            result.saturation = json["saturation"];
+        } catch (const ofJson::type_error& e) { }
+        try {
+            result.brightness = json["brightness"];
+        } catch (const ofJson::type_error& e) { }
+        try {
+            result.alpha = json["alpha"];
+        } catch (const ofJson::type_error& e) { }
+
+        return result;
+    }
+    
+    ofJson jsonRepresentation() {
+        ofJson json;
+        
+        json = {{"hue", hue}};
+        json += {"saturation", saturation};
+        json += {"brightness", brightness};
+        json += {"alpha", alpha};
+        
+        return json;
+    }
+};
+
+struct TreeRenderParameters {
+    int drawChooserIndex;
+    int colorChooserIndex;
+    ofBlendMode blendMode;
+    
+    TreeRenderParameters():
+    drawChooserIndex(0),
+    colorChooserIndex(0),
+    blendMode(OF_BLENDMODE_DISABLED) {}
+    
+    TreeRenderParameters(std::string filePath):
+    drawChooserIndex(0),
+    colorChooserIndex(0),
+    blendMode(OF_BLENDMODE_DISABLED) {}
+    
+    static TreeRenderParameters fromJson(ofJson json) {
+        TreeRenderParameters params = TreeRenderParameters();
+        
+        try {
+            params.drawChooserIndex = json["drawChooserIndex"];
+        } catch (const ofJson::type_error& e) { }
+        try {
+            params.colorChooserIndex = json["colorChooserIndex"];
+        } catch (const ofJson::type_error& e) { }
+        try {
+            params.blendMode = json["blendMode"];
+        } catch (const ofJson::type_error& e) { }
+        
+        return params;
+    }
+    
+    ofJson jsonRepresentation() {
+        ofJson json;
+        
+        json = {{"drawChooserIndex", drawChooserIndex}};
+        json += {"colorChooserIndex", colorChooserIndex};
+        json += {"blendMode", blendMode};
+        
+        return json;
+    }
+};
+
+
+struct TreesParameters {
+    uint64_t randomSeed;
+    int treeDepth;
+    int animatorChooserIndex;
+    TreeRenderParameters renderParameters1;
+    TreeRenderParameters renderParameters2;
+    HSBFloats backgroundColor;
+    
+    TreesParameters():
+    randomSeed(0),
+    treeDepth(3),
+    animatorChooserIndex(0),
+    renderParameters1(TreeRenderParameters()),
+    renderParameters2(TreeRenderParameters()),
+    backgroundColor(HSBFloats()) {}
+    
+    TreesParameters(std::string filePath):
+    randomSeed(0),
+    treeDepth(3),
+    animatorChooserIndex(0),
+    renderParameters1(TreeRenderParameters()),
+    renderParameters2(TreeRenderParameters()),
+    backgroundColor(HSBFloats()) {
+    }
+    
+    static TreesParameters fromFile(std::string filePath) {
+        TreesParameters params = TreesParameters();
+        
+        ofJson json = ofLoadJson(filePath);
+        
+        try {
+            params.randomSeed = json["randomSeed"];
+        } catch (const ofJson::type_error& e) { }
+        try {
+            params.treeDepth = json["treeDepth"];
+        } catch (const ofJson::type_error& e) { }
+        try {
+            params.animatorChooserIndex = json["animatorChooserIndex"];
+        } catch (const ofJson::type_error& e) { }
+        try {
+//            ofJson rps = json["renderParameters"];
+//            params.renderParameters1 = TreeRenderParameters::fromJson(rps.at(0));
+            params.renderParameters1 = TreeRenderParameters::fromJson(json["renderParameters1"]);
+            params.renderParameters2 = TreeRenderParameters::fromJson(json["renderParameters2"]);
+//            params.renderParameters = json["renderParameters"];
+//            for (auto& rp : json["renderParameters"].items()) {
+//                params.renderParameters.push_back(rp.value().template get<TreeRenderParameters>());
+//            }
+        } catch (const ofJson::type_error& e) { }
+        try {
+            params.backgroundColor = HSBFloats::fromJson(json["backgroundColor"]);
+        } catch (const ofJson::type_error& e) { }
+        
+        return params;
+    }
+    
+    ofJson jsonRepresentation() {
+        ofJson json;
+        
+        json = {{"randomSeed", randomSeed}};
+        json += {"treeDepth", treeDepth};
+        json += {"animatorChooserIndex", animatorChooserIndex};
+        json += {"renderParameters1", renderParameters1.jsonRepresentation()};
+        json += {"renderParameters2", renderParameters2.jsonRepresentation()};
+        json += {"backgroundColor", backgroundColor.jsonRepresentation()};
+        json += {"renderParameters", {renderParameters1.jsonRepresentation(), renderParameters2.jsonRepresentation()}};
+
+        return json;
+    }
+};
+
 Tree *tree;
 TreeAnimator *animator;
 TreeRenderer *renderer;
 int frameRate = 120;
+
+TreesParameters params1;
+TreesParameters params2;
 
 ofFbo drawBuffer;
 ofFbo drawBuffer2;
@@ -29,6 +186,7 @@ int windowHeight;
 std::vector<ColorChooser> colorChoosers;
 std::vector<ColorChooser> legacyColorChoosers;
 std::vector<BinaryChooser> drawChoosers;
+std::vector<AnimatorChooser> animatorChoosers;
 
 uint64_t randomSeed;
 
@@ -79,19 +237,63 @@ int randInt(int max) {
 }
 
 //--------------------------------------------------------------
-void ofApp::setup(){
+void ofApp::setup() {
+    ofJson test = ofLoadJson("/Users/owen/Desktop/test.json");
+    
+    cout << test["a"] << "\n";
+    
+//    TreesParameters testP = readFrom("/Users/owen/Desktop/testout.json");
+    TreesParameters testP = TreesParameters::fromFile("/Users/owen/Desktop/testout.json");
+    cout << testP.randomSeed << "\n";
+    
     randomSeed = ofGetSystemTimeMillis();
-    randomSeed = 34168016;
+    randomSeed = 1;
     of::random::seed(randomSeed);
 
+//    ofJson obj;
+////    obj += ofJson::object_t::value_type("randomSeed", randomSeed);
+////    obj.push_back({{"randomSeed", randomSeed}});
+////    obj = {{"randomSeed", randomSeed}};
+//    obj = {{"", ""}};
+//    obj += {"randomSeed", randomSeed};
+//    obj += {"treeDepth", 6};
+//    
+//    ofSaveJson("/Users/owen/Desktop/testout.json", obj);
+
     cout << "SEED: " << randomSeed << "\n";
+    
+    params1.randomSeed = randomSeed;
+    params1.treeDepth = 6;
+    params1.animatorChooserIndex = 5;
+    
+    TreeRenderParameters renderParams1 = TreeRenderParameters();
+    renderParams1.drawChooserIndex = 0;
+    renderParams1.colorChooserIndex = 1;
+    renderParams1.blendMode = OF_BLENDMODE_ADD;
+    TreeRenderParameters renderParams2 = TreeRenderParameters();
+    renderParams2.drawChooserIndex = 2;
+    renderParams2.colorChooserIndex = 5;
+    renderParams2.blendMode = OF_BLENDMODE_SCREEN;
+    
+    params1.renderParameters1 = renderParams1;
+    params1.renderParameters2 = renderParams2;
+
+    ofSavePrettyJson("/Users/owen/Desktop/paramsout.json", params1.jsonRepresentation());
+    
+    HSBFloats bgColor;
+    bgColor.hue = 0;
+    bgColor.saturation = 0;
+    bgColor.brightness = 255;
+    bgColor.alpha = 255;
+    
+    params1.backgroundColor = bgColor;
 
     windowWidth = 2000;
     windowHeight = 1000;
     screenScale = getRetinaScale();
     ofSetWindowShape(windowWidth * screenScale, windowHeight * screenScale);
 
-    TreeGenerator generator = TreeGenerator(5, windowHeight / 8);
+    TreeGenerator generator = TreeGenerator(params1.treeDepth, windowHeight / 8);
     tree = generator.generateTree();
         
     animator = new TreeAnimator(tree);
@@ -200,10 +402,8 @@ void ofApp::setup(){
                                                [](float v, float d) -> float { return 0.1 + cosf(d/20) * 0.1; },
                                                [](float v, float d) -> float { return 0.1 + sinf(d) * 0.4; }
                                                )
-                         )
-    };
-    
-    std::vector<NodeAnimator *> legacyAnimators = {
+                         ),
+        // LEGACY animators below
         new NodeAnimator(
                          NodeAnimatorFunctions(nullptr,
                                                nullptr,
@@ -251,53 +451,90 @@ void ofApp::setup(){
         }
     };
 
-    AnimatorChooser chooser = [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
-        int numAnimators = animators.size();
-//        if (node->children.empty()) {
-//            return animators[2];
-//        } else {
-//            return animators[randInt(3)];
-////            return animators[depth % 3];
-//        }
-//        if (depth % 2 != 0) {
-//            return animators[4];
-//        } else {
-//            return animators[9];
-//        }
-////        return animators[depth % 3];
-//        if (depth == 3) {
-//            return animators[randInt(2)];
-//        } else {
-//            return animators[(depth+2) % 4];
-//        }
-//        return animators[depth %3 + randInt(3)];
-//        return animators[3 + randInt(3)];
-//        return animators[6];
-//        return animators[randInt(2) * 3];
-        return animators[(randInt(3)+1) * 2];
-//        return animators[randInt(numAnimators)];
-//        return animators[9 + randInt(4)];
-//        return animators[10];
+    animatorChoosers = {
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            int numAnimators = animators.size();
+            if (node->children.empty()) {
+                return animators[4];
+            } else {
+                return animators[depth % 3 + 3];
+            }
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            int numAnimators = animators.size();
+            if (node->children.empty()) {
+                return animators[4];
+            } else {
+                return animators[randInt(3)];
+            }
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            if (depth % 2 != 0) {
+                return animators[4];
+            } else {
+                return animators[9];
+            }
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            return animators[depth % 3];
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            if (depth == 3) {
+                return animators[randInt(2)];
+            } else {
+                return animators[(depth+2) % 4];
+            }
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            return animators[depth % 3 + randInt(3)];
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            return animators[3 + randInt(3)];
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            return animators[6];
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            return animators[randInt(2) * 3];
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            return animators[(randInt(3)+1) * 2];
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            int numAnimators = animators.size();
+            return animators[randInt(numAnimators)];
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            return animators[9 + randInt(4)];
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            return animators[10];
+        },
+        // LEGACY choosers below
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            int numAnimators = animators.size();
+            return animators[depth % numAnimators];
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            int numAnimators = animators.size();
+            if (node->children.empty()) {
+                return animators[3];
+            } else {
+                return animators[depth % numAnimators];
+            }
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            return animators[2 + (depth + 1) % 2];
+        },
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            int numAnimators = animators.size();
+            return animators[abs(numAnimators - depth) % numAnimators];
+        }
     };
-    
-    AnimatorChooser legacyChooser = [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
-        int numAnimators = animators.size();
-//        if (node->children.empty()) {
-//            return animators[3];
-//        } else {
-//            return animators[depth % numAnimators];
-//        }
-//        return animators[abs(numAnimators - depth) % numAnimators];
-        return animators[depth % numAnimators];
-//        return animators[2 + (depth + 1) % 2];
-    };
-    
-//    TreeAnimatorInstaller animatorInstaller = TreeAnimatorInstaller(tree,
-//                                                                    legacyAnimators,
-//                                                                    legacyChooser);
+        
     TreeAnimatorInstaller animatorInstaller = TreeAnimatorInstaller(tree,
                                                                     allAnimators,
-                                                                    chooser);
+                                                                    animatorChoosers[params1.animatorChooserIndex]);
 
     animatorInstaller.visitAll();
 
@@ -339,10 +576,8 @@ void ofApp::setup(){
             } else {
                 return ofColor::fromHsb(45, 60, 255, 200);
             }
-        }
-    };
-    
-    legacyColorChoosers = {
+        },
+        // LEGACY original(ish) chooser below
         [](RenderedTreeNode node) -> ofColor {
             int maxDepth = node.maxBranchDepth;
             int currentDepth = node.depth;
@@ -381,7 +616,7 @@ void ofApp::setup(){
 //    ofSetColor(200,200,220,200);
 //        ofSetColor(255, 0, 0, 50);
     ofFill();
-    ofBackground(0, 0, 0);
+    ofBackground(ofColor::fromHsb(params1.backgroundColor.hue, params1.backgroundColor.saturation, params1.backgroundColor.brightness, params1.backgroundColor.alpha));
 }
 
 //--------------------------------------------------------------
@@ -392,11 +627,11 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     RenderedTree rendered = renderer->render();
-    RenderedTreeDrawer drawer1 = RenderedTreeDrawer(rendered, colorChoosers[1], drawChoosers[2]);
-    RenderedTreeDrawer drawer2 = RenderedTreeDrawer(rendered, legacyColorChoosers[0], drawChoosers[0]);
+    RenderedTreeDrawer drawer1 = RenderedTreeDrawer(rendered, colorChoosers[params1.renderParameters1.colorChooserIndex], drawChoosers[params1.renderParameters1.drawChooserIndex]);
+    RenderedTreeDrawer drawer2 = RenderedTreeDrawer(rendered, colorChoosers[params1.renderParameters2.colorChooserIndex], drawChoosers[params1.renderParameters2.drawChooserIndex]);
 
     drawBuffer.begin();
-    ofEnableBlendMode(OF_BLENDMODE_ADD);
+    ofEnableBlendMode(params1.renderParameters1.blendMode);
     ofTranslate(ofGetWidth() / 4, ofGetHeight() / 2);
     ofScale(screenScale, screenScale);
     drawer1.drawAsPoints(rendered);
@@ -405,7 +640,7 @@ void ofApp::draw(){
     drawBuffer.draw(0, 0);
     
     drawBuffer2.begin();
-    ofEnableBlendMode(OF_BLENDMODE_SCREEN);
+    ofEnableBlendMode(params1.renderParameters2.blendMode);
 //    ofClear(0, 0, 0);
     ofTranslate(3*ofGetWidth() / 4, ofGetHeight() / 2);
     ofScale(screenScale, screenScale);
