@@ -6,22 +6,31 @@
 #include <math.h>
 #include <sstream>  // For std::stringstream
 
+// 0-1: sawtooth and square
+// 2-3: some sqrt stuff
+// 4: abs
+// 5-7: including v in the trig functions; manifests as pendulum effect
+// 8-10: Pretty standard functions
+// 11: Only simple counterclockwise rotation
+// 12: Pretty standard function
+// 12-15: LEGACY animators below; pretty standard stuff.
+
 uint64_t fileToLoad = 0;
 
 TreesParameters setupParameters() {
     TreesParameters result = TreesParameters();
     
-    result.treeDepth = 5;
-    result.animatorChooserIndex = 0;
+    result.treeDepth = 6;
+    result.animatorChooserIndex = 12;
     
     TreeRenderParameters renderParams1 = TreeRenderParameters();
     renderParams1.drawChooserIndex = 0;
-    renderParams1.colorChooserIndex = 1;
+    renderParams1.colorChooserIndex = 6;
     renderParams1.blendMode = OF_BLENDMODE_SCREEN;
     TreeRenderParameters renderParams2 = TreeRenderParameters();
-    renderParams2.drawChooserIndex = 2;
-    renderParams2.colorChooserIndex = 2;
-    renderParams2.blendMode = OF_BLENDMODE_SCREEN;
+    renderParams2.drawChooserIndex = 0;
+    renderParams2.colorChooserIndex = 6;
+    renderParams2.blendMode = OF_BLENDMODE_DISABLED;
     
     result.renderParameters1 = renderParams1;
     result.renderParameters2 = renderParams2;
@@ -428,7 +437,7 @@ void ofApp::setup() {
                 return ofColor::fromHsb(45, 60, 255, 200);
             }
         },
-        // LEGACY original(ish) chooser below
+        // 5: LEGACY original(ish) chooser
         [](RenderedTreeNode node) -> ofColor {
             int maxDepth = node.maxBranchDepth;
             int currentDepth = node.depth;
@@ -441,7 +450,19 @@ void ofApp::setup() {
             } else {
                 return ofColor(255, 120, 100);
             }
-        }
+        },
+        // 6: Green/brown
+        [](RenderedTreeNode node) -> ofColor {
+            if (node.maxBranchDepth - node.depth == 0) {
+                return ofColor::fromHsb(50, 240, 120, 240);
+            } else if (node.maxBranchDepth - node.depth == 1) {
+                return ofColor::fromHsb(45, 210, 200, 170);
+            } else if (node.maxBranchDepth - node.depth == 2) {
+                return ofColor::fromHsb(15, 250, 100, 200);
+            } else {
+                return ofColor::fromHsb(30, 255, 190, 170);
+            }
+        },
     };
     
     renderer = new TreeRenderer(tree);
@@ -494,6 +515,7 @@ void ofApp::draw(){
     ofEnableBlendMode(params.renderParameters2.blendMode);
 //    ofClear(0, 0, 0);
     ofTranslate(3*ofGetWidth() / 4, ofGetHeight() / 2);
+//    ofTranslate(ofGetWidth() / 4 + 400, ofGetHeight() / 2);
     ofScale(screenScale, screenScale);
 //    drawer2.drawAsFatPoints(rendered);
     drawer2.drawAsPoints(rendered);
