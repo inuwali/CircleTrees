@@ -14,15 +14,15 @@ BranchParameters::BranchParameters():
 aspect(1),
 branchAngle(0),
 terminusAngle(0),
-size(1),
+scale(1),
 offset(0)
 {}
 
-BranchParameters::BranchParameters(float aspect, float branchAngle, float terminusAngle, float size, float offset):
+BranchParameters::BranchParameters(float aspect, float branchAngle, float terminusAngle, float scale, float offset):
 aspect(aspect),
 branchAngle(branchAngle),
 terminusAngle(terminusAngle),
-size(size),
+scale(scale),
 offset(offset)
 {}
 
@@ -72,13 +72,13 @@ void NodeAnimator::applyTo(TreeNode *node, float dt) {
     speed.aspect = f_speed.aspect(speed.aspect, dt);
     speed.branchAngle = f_speed.branchAngle(speed.branchAngle, dt);
     speed.terminusAngle = f_speed.terminusAngle(speed.terminusAngle, dt);
-    speed.size = f_speed.size(speed.size, dt);
+    speed.scale = f_speed.size(speed.scale, dt);
     speed.offset = f_speed.offset(speed.offset, dt);
     
     node->parameters.aspect = speed.aspect;
     node->parameters.branchAngle = speed.branchAngle;
     node->parameters.terminusAngle = speed.terminusAngle;
-    node->parameters.size = speed.size;
+    node->parameters.scale = speed.scale;
     node->parameters.offset = speed.offset;
 }
 

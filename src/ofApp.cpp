@@ -20,8 +20,8 @@ uint64_t fileToLoad = 0;
 TreesParameters setupParameters() {
     TreesParameters result = TreesParameters();
     
-    result.treeDepth = 6;
-    result.animatorChooserIndex = 12;
+    result.treeDepth = 2;
+    result.animatorChooserIndex = 17;
     
     TreeRenderParameters renderParams1 = TreeRenderParameters();
     renderParams1.drawChooserIndex = 0;
@@ -48,7 +48,7 @@ TreesParameters setupParameters() {
 Tree *tree;
 TreeAnimator *animator;
 TreeRenderer *renderer;
-int frameRate = 120;
+int frameRate = 2;
 
 TreesParameters params;
 
@@ -141,7 +141,8 @@ void ofApp::setup() {
         params = setupParameters();
     }
 
-    windowWidth = 2000;
+//    windowWidth = 2000;
+    windowWidth = 1000;
     windowHeight = 1000;
     screenScale = getRetinaScale();
     ofSetWindowShape(windowWidth * screenScale, windowHeight * screenScale);
@@ -249,7 +250,7 @@ void ofApp::setup() {
         new NodeAnimator(
                          NodeAnimatorFunctions(nullptr,
                                                nullptr,
-                                               [](float v, float d) -> float { return v - 0.1; },
+                                               [](float v, float d) -> float { return v - 5; },
                                                nullptr,
                                                nullptr
                                                )
@@ -312,6 +313,7 @@ void ofApp::setup() {
     };
 
     animatorChoosers = {
+        // 0-12: A bunch of things
         [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
             int numAnimators = animators.size();
             if (node->children.empty()) {
@@ -370,7 +372,7 @@ void ofApp::setup() {
         [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
             return animators[10];
         },
-        // LEGACY choosers below
+        // 13-16: LEGACY choosers
         [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
             int numAnimators = animators.size();
             return animators[depth % numAnimators];
@@ -389,6 +391,10 @@ void ofApp::setup() {
         [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
             int numAnimators = animators.size();
             return animators[abs(numAnimators - depth) % numAnimators];
+        },
+        // 17+: New choosers
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            return animators[11];
         }
     };
         
@@ -502,25 +508,26 @@ void ofApp::draw(){
     RenderedTreeDrawer drawer1 = RenderedTreeDrawer(rendered, colorChoosers[params.renderParameters1.colorChooserIndex], drawChoosers[params.renderParameters1.drawChooserIndex]);
     RenderedTreeDrawer drawer2 = RenderedTreeDrawer(rendered, colorChoosers[params.renderParameters2.colorChooserIndex], drawChoosers[params.renderParameters2.drawChooserIndex]);
 
-    drawBuffer.begin();
-    ofEnableBlendMode(params.renderParameters1.blendMode);
-    ofTranslate(ofGetWidth() / 4, ofGetHeight() / 2);
-    ofScale(screenScale, screenScale);
-    drawer1.drawAsPoints(rendered);
-    drawBuffer.end();
-    
-    drawBuffer.draw(0, 0);
+//    drawBuffer.begin();
+//    ofEnableBlendMode(params.renderParameters1.blendMode);
+//    ofTranslate(ofGetWidth() / 4, ofGetHeight() / 2);
+//    ofScale(screenScale, screenScale);
+//    drawer1.drawAsPoints(rendered);
+//    drawBuffer.end();
+//    
+//    drawBuffer.draw(0, 0);
     
     drawBuffer2.begin();
     ofEnableBlendMode(params.renderParameters2.blendMode);
-//    ofClear(0, 0, 0);
-    ofTranslate(3*ofGetWidth() / 4, ofGetHeight() / 2);
+    ofClear(0, 0, 0);
+//    ofTranslate(3*ofGetWidth() / 4, ofGetHeight() / 2);
 //    ofTranslate(ofGetWidth() / 4 + 400, ofGetHeight() / 2);
+    ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
     ofScale(screenScale, screenScale);
 //    drawer2.drawAsFatPoints(rendered);
-    drawer2.drawAsPoints(rendered);
-//    drawer2.drawAsCircles(rendered);
-//    drawer2.drawAsLines(rendered);
+//    drawer2.drawAsPoints(rendered);
+    drawer2.drawAsCircles(rendered);
+    drawer2.drawAsLines(rendered);
     drawBuffer2.end();
     
     drawBuffer2.draw(0, 0);

@@ -17,10 +17,10 @@
 
 struct BranchParameters {
 public:
-    float aspect;
+    float aspect; // width:height
     float branchAngle;
     float terminusAngle;
-    float size;
+    float scale;
     float offset;
     
     BranchParameters();
@@ -87,9 +87,9 @@ public:
 
 struct RenderedTreeNode {
 public:
-    ofNode node;
     ofPoint position;
-    float size;
+    float angle;
+    ofVec2f size;
     ofVec2f velocity;
     int depth;
     int minBranchDepth;
@@ -98,9 +98,9 @@ public:
     std::vector<RenderedTreeNode> children;
     int rand;
 
-    RenderedTreeNode(ofPoint position, float size, ofVec2f velocity, int depth, int maxBranchDepth, int minBranchDepth, ofColor color):
-    node(ofNode()),
+    RenderedTreeNode(ofPoint position, float angle, ofVec2f size, ofVec2f velocity, int depth, int maxBranchDepth, int minBranchDepth, ofColor color):
     position(position),
+    angle(angle),
     size(size),
     velocity(velocity),
     depth(depth),
@@ -185,7 +185,11 @@ public:
         if (parent != nullptr) {
             currentMatrix.glRotate(node->parameters.terminusAngle, 0, 0, 1);
             currentMatrix.glTranslate(ofVec3f(0, -tree->size/2 - node->parameters.offset * tree->size / 2, 0));
-            currentMatrix.glScale(node->parameters.size, node->parameters.size, 1);
+            if (node->parameters.aspect > 1) {
+                currentMatrix.glScale(node->parameters.scale, node->parameters.scale * node->parameters.aspect, 1);
+            } else {
+                currentMatrix.glScale(node->parameters.scale * node->parameters.aspect, node->parameters.scale, 1);
+            }
             currentMatrix.glRotate(node->parameters.branchAngle, 0, 0, 1);
         }
         
@@ -199,8 +203,26 @@ public:
             case 2: color = ofColor(0, 0, 255, 255); break;
         }
 
-        RenderedTreeNode renderedNode = RenderedTreeNode(point, currentMatrix.getScale().x * tree->size, ofVec2f(0, 0), currentDepth, currentDepth, currentDepth, color);
+//        RenderedTreeNode renderedNode = RenderedTreeNode(point, currentMatrix.getScale().x * tree->size, ofVec2f(0, 0), currentDepth, currentDepth, currentDepth, color);
+        ofVec3f trans;
+        ofQuaternion rot;
+        ofVec3f scal;
+        ofQuaternion so;
+        currentMatrix.decompose(trans, rot, scal, so);
         
+        ofQuaternion rotation = currentMatrix.getRotate();
+        float angle;
+        float x;
+        float y;
+        float z;
+//        rotation.getRotate(angle, x, y, z);
+        rot.getRotate(angle, x, y, z);
+        cout << angle << " * ";
+        cout << x << " * ";
+        cout << y << " * ";
+        cout << y << " * \n";
+        RenderedTreeNode renderedNode = RenderedTreeNode(point, angle, ofVec2f(currentMatrix.getScale().x * tree->size, currentMatrix.getScale().y * tree->size), ofVec2f(0, 0), currentDepth, currentDepth, currentDepth, color);
+
         std::vector<RenderedTreeNode> children = std::vector<RenderedTreeNode>();
         int maxBranchDepth = 0;
         int minBranchDepth = 1000000000;
@@ -249,7 +271,13 @@ public:
     void drawSubtreeCircles(RenderedTreeNode node, RenderedTreeNode *parent) {
         if (drawPolicy(node)) {
             ofSetColor(colorChooser(node));
-            ofDrawEllipse(node.position.x, node.position.y, node.size, node.size);
+            ofPushMatrix();
+            ofRotateDeg(node.angle);
+//            if (parent != nullptr) {
+//                cout << node.angle << "\n";
+//            }
+            ofDrawEllipse(node.position.x, node.position.y, node.size.x, node.size.y);
+            ofPopMatrix();
         }
         for (RenderedTreeNode child: node.children) {
             drawSubtreeCircles(child, &node);
@@ -342,7 +370,7 @@ public:
         if (remainingDepth > 0) {
             float numChildren;
             if (initial) {
-                numChildren = 3;
+                numChildren = 1;
                 for (int i = 0; i < numChildren; i++) {
                     node->children.push_back(generateHelper(remainingDepth - 1, BranchParameters(1, 0, (float)i * 360.0 / numChildren, scale, 0), false));
                 }
