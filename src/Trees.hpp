@@ -284,6 +284,20 @@ public:
         }
     }
 
+    void drawAsSquares(RenderedTree tree) {
+        drawSubtreeSquares(tree.root, nullptr);
+    }
+    
+    void drawSubtreeSquares(RenderedTreeNode node, RenderedTreeNode *parent) {
+        if (drawPolicy(node)) {
+            ofSetColor(colorChooser(node));
+            ofDrawRectangle(node.position.x - node.size / 2, node.position.y - node.size / 2, node.size, node.size);
+        }
+        for (RenderedTreeNode child: node.children) {
+            drawSubtreeSquares(child, &node);
+        }
+    }
+
 };
 
 class TreeAnimator: public TreeVisitor<float, bool> {

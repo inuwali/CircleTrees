@@ -18,7 +18,9 @@
 typedef enum {
     POINTS,
     LINES,
-    CIRCLES
+    CIRCLES,
+    DOTS,
+    SQUARES
 } DrawStyle;
 
 uint64_t fileToLoad = 0;
@@ -30,17 +32,17 @@ int windowWidth = 1000;
 int windowHeight = 1000;
 int numTrees = 1;
 
-DrawStyle drawStyle = LINES;
+DrawStyle drawStyle = DOTS;
 
 TreesParameters setupParameters() {
     TreesParameters result = TreesParameters();
     
-    result.treeDepth = 6;
+    result.treeDepth = 5;
     result.animatorChooserIndex = 12;
     
     TreeRenderParameters renderParams1 = TreeRenderParameters();
     renderParams1.drawChooserIndex = 0;
-    renderParams1.colorChooserIndex = 3;
+    renderParams1.colorChooserIndex = 7;
     renderParams1.blendMode = OF_BLENDMODE_SCREEN;
     
     TreeRenderParameters renderParams2 = TreeRenderParameters();
@@ -53,8 +55,8 @@ TreesParameters setupParameters() {
     
     HSBFloats bg = HSBFloats();
     bg.hue = 36;
-    bg.saturation = 20;
-    bg.brightness = 0;
+    bg.saturation = 0;
+    bg.brightness = 255;
     bg.alpha = 255;
     result.backgroundColor = bg;
     
@@ -411,7 +413,7 @@ void ofApp::setup() {
     colorChoosers = {
         // 0
         [](RenderedTreeNode node) -> ofColor { return node.color; },
-        // 1: Blues?
+        // 1: Orange, blue, purple
         [](RenderedTreeNode node) -> ofColor {
             if (node.maxBranchDepth - node.depth == 0) {
                 return ofColor::fromHsb(150, 240, 230, 100);
@@ -423,7 +425,7 @@ void ofApp::setup() {
                 return ofColor::fromHsb(25, 255, 240, 255);
             }
         },
-        // 2: Blues with one yellow?
+        // 2: Cranberry, magenta, purple, green
         [](RenderedTreeNode node) -> ofColor {
             if (node.maxBranchDepth - node.depth == 0) {
                 return ofColor::fromHsb(90, 240, 120, 140);
@@ -435,7 +437,7 @@ void ofApp::setup() {
                 return ofColor::fromHsb(240, 255, 190, 170);
             }
         },
-        // 3: ??
+        // 3: Only renders the last node; kind of redundant with draw choosers now
         [](RenderedTreeNode node) -> ofColor {
             if (node.maxBranchDepth - node.depth == 0) {
                 return ofColor::fromHsb(90, 240, 230, 200);
@@ -478,6 +480,18 @@ void ofApp::setup() {
                 return ofColor::fromHsb(30, 255, 190, 170);
             }
         },
+        // 7: Blues
+        [](RenderedTreeNode node) -> ofColor {
+            if (node.maxBranchDepth - node.depth == 0) {
+                return ofColor::fromHsb(170, 240, 120, 240);
+            } else if (node.maxBranchDepth - node.depth == 1) {
+                return ofColor::fromHsb(170, 210, 200, 170);
+            } else if (node.maxBranchDepth - node.depth == 2) {
+                return ofColor::fromHsb(170, 120, 250, 200);
+            } else {
+                return ofColor::fromHsb(170, 200, 220, 170);
+            }
+        }
     };
     
     renderer = new TreeRenderer(tree);
@@ -539,6 +553,15 @@ void ofApp::draw(){
         case CIRCLES:
             ofClear(0, 0, 0);
             drawer1.drawAsCircles(rendered);
+            break;
+        case DOTS:
+            ofClear(0, 0, 0);
+            drawer1.drawAsFatPoints(rendered);
+            break;
+        case SQUARES:
+            ofClear(0, 0, 0);
+            drawer1.drawAsSquares(rendered);
+            break;
     }
     drawBuffer.end();
     
