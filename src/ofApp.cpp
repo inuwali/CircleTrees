@@ -32,7 +32,7 @@ int windowWidth = 1000;
 int windowHeight = 1000;
 int numTrees = 1;
 
-DrawStyle drawStyle = DOTS;
+DrawStyle drawStyle = POINTS;
 
 TreesParameters setupParameters() {
     TreesParameters result = TreesParameters();
@@ -154,6 +154,7 @@ void ofApp::setup() {
     }
 
 //    windowWidth = 2000;
+    windowWidth = 1000;
 //    windowHeight = 1000;
     screenScale = getRetinaScale();
     ofSetWindowShape(windowWidth * screenScale, windowHeight * screenScale);
@@ -261,7 +262,7 @@ void ofApp::setup() {
         new NodeAnimator(
                          NodeAnimatorFunctions(nullptr,
                                                nullptr,
-                                               [](float v, float d) -> float { return v - 0.1; },
+                                               [](float v, float d) -> float { return v - 5; },
                                                nullptr,
                                                nullptr
                                                )
@@ -324,6 +325,7 @@ void ofApp::setup() {
     };
 
     animatorChoosers = {
+        // 0-12: A bunch of things
         [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
             int numAnimators = animators.size();
             if (node->children.empty()) {
@@ -382,7 +384,7 @@ void ofApp::setup() {
         [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
             return animators[10];
         },
-        // LEGACY choosers below
+        // 13-16: LEGACY choosers
         [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
             int numAnimators = animators.size();
             return animators[depth % numAnimators];
@@ -401,6 +403,10 @@ void ofApp::setup() {
         [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
             int numAnimators = animators.size();
             return animators[abs(numAnimators - depth) % numAnimators];
+        },
+        // 17+: New choosers
+        [](TreeNode *node, int depth, std::vector<NodeAnimator *> animators) -> NodeAnimator* {
+            return animators[11];
         }
     };
         
@@ -533,37 +539,41 @@ void ofApp::draw(){
     RenderedTreeDrawer drawer1 = RenderedTreeDrawer(rendered, colorChoosers[params.renderParameters1.colorChooserIndex], drawChoosers[params.renderParameters1.drawChooserIndex]);
     RenderedTreeDrawer drawer2 = RenderedTreeDrawer(rendered, colorChoosers[params.renderParameters2.colorChooserIndex], drawChoosers[params.renderParameters2.drawChooserIndex]);
 
-    drawBuffer.begin();
-    ofEnableBlendMode(params.renderParameters1.blendMode);
-    if (numTrees > 1) {
-        ofTranslate(ofGetWidth() / 4, ofGetHeight() / 2);
-    } else {
-        ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
+    { // Buffer 1
+        drawBuffer.begin();
+        ofEnableBlendMode(params.renderParameters1.blendMode);
+        if (numTrees > 1) {
+            ofEnableBlendMode(params.renderParameters2.blendMode);
+            ofClear(0, 0, 0);
+            ofTranslate(ofGetWidth() / 4, ofGetHeight() / 2);
+        } else {
+            ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
+        }
+        ofScale(screenScale, screenScale);
+        
+        switch (drawStyle) {
+            case POINTS:
+                drawer1.drawAsPoints(rendered);
+                break;
+            case LINES:
+                ofClear(0, 0, 0);
+                drawer1.drawAsLines(rendered);
+                break;
+            case CIRCLES:
+                ofClear(0, 0, 0);
+                drawer1.drawAsCircles(rendered);
+                break;
+            case DOTS:
+                ofClear(0, 0, 0);
+                drawer1.drawAsFatPoints(rendered);
+                break;
+            case SQUARES:
+                ofClear(0, 0, 0);
+                drawer1.drawAsSquares(rendered);
+                break;
+        }
+        drawBuffer.end();
     }
-    ofScale(screenScale, screenScale);
-    
-    switch (drawStyle) {
-        case POINTS:
-            drawer1.drawAsPoints(rendered);
-            break;
-        case LINES:
-            ofClear(0, 0, 0);
-            drawer1.drawAsLines(rendered);
-            break;
-        case CIRCLES:
-            ofClear(0, 0, 0);
-            drawer1.drawAsCircles(rendered);
-            break;
-        case DOTS:
-            ofClear(0, 0, 0);
-            drawer1.drawAsFatPoints(rendered);
-            break;
-        case SQUARES:
-            ofClear(0, 0, 0);
-            drawer1.drawAsSquares(rendered);
-            break;
-    }
-    drawBuffer.end();
     
     drawBuffer.draw(0, 0);
     
