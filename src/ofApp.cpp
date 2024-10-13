@@ -15,7 +15,22 @@
 // 12: Pretty standard function
 // 12-15: LEGACY animators below; pretty standard stuff.
 
+typedef enum {
+    POINTS,
+    LINES,
+    CIRCLES
+} DrawStyle;
+
 uint64_t fileToLoad = 0;
+
+int bufferWidth;
+int bufferHeight;
+int screenScale;
+int windowWidth = 1000;
+int windowHeight = 1000;
+int numTrees = 1;
+
+DrawStyle drawStyle = LINES;
 
 TreesParameters setupParameters() {
     TreesParameters result = TreesParameters();
@@ -25,8 +40,9 @@ TreesParameters setupParameters() {
     
     TreeRenderParameters renderParams1 = TreeRenderParameters();
     renderParams1.drawChooserIndex = 0;
-    renderParams1.colorChooserIndex = 6;
+    renderParams1.colorChooserIndex = 3;
     renderParams1.blendMode = OF_BLENDMODE_SCREEN;
+    
     TreeRenderParameters renderParams2 = TreeRenderParameters();
     renderParams2.drawChooserIndex = 0;
     renderParams2.colorChooserIndex = 6;
@@ -38,7 +54,7 @@ TreesParameters setupParameters() {
     HSBFloats bg = HSBFloats();
     bg.hue = 36;
     bg.saturation = 20;
-    bg.brightness = 235;
+    bg.brightness = 0;
     bg.alpha = 255;
     result.backgroundColor = bg;
     
@@ -62,12 +78,6 @@ int getRetinaScale() {
     }
     return 1;  // Default to 1.0 if no retina display
 }
-
-int bufferWidth;
-int bufferHeight;
-int screenScale;
-int windowWidth;
-int windowHeight;
 
 std::vector<ColorChooser> colorChoosers;
 std::vector<BinaryChooser> drawChoosers;
@@ -141,8 +151,8 @@ void ofApp::setup() {
         params = setupParameters();
     }
 
-    windowWidth = 2000;
-    windowHeight = 1000;
+//    windowWidth = 2000;
+//    windowHeight = 1000;
     screenScale = getRetinaScale();
     ofSetWindowShape(windowWidth * screenScale, windowHeight * screenScale);
 
@@ -399,7 +409,9 @@ void ofApp::setup() {
     animatorInstaller.visitAll();
 
     colorChoosers = {
+        // 0
         [](RenderedTreeNode node) -> ofColor { return node.color; },
+        // 1: Blues?
         [](RenderedTreeNode node) -> ofColor {
             if (node.maxBranchDepth - node.depth == 0) {
                 return ofColor::fromHsb(150, 240, 230, 100);
@@ -411,6 +423,7 @@ void ofApp::setup() {
                 return ofColor::fromHsb(25, 255, 240, 255);
             }
         },
+        // 2: Blues with one yellow?
         [](RenderedTreeNode node) -> ofColor {
             if (node.maxBranchDepth - node.depth == 0) {
                 return ofColor::fromHsb(90, 240, 120, 140);
@@ -422,6 +435,7 @@ void ofApp::setup() {
                 return ofColor::fromHsb(240, 255, 190, 170);
             }
         },
+        // 3: ??
         [](RenderedTreeNode node) -> ofColor {
             if (node.maxBranchDepth - node.depth == 0) {
                 return ofColor::fromHsb(90, 240, 230, 200);
@@ -429,6 +443,7 @@ void ofApp::setup() {
                 return ofColor::fromHsb(0, 0, 0, 0);
             }
         },
+        // 4: Reds?
         [](RenderedTreeNode node) -> ofColor {
             int distFromLeaf = node.maxBranchDepth - node.depth;
             if (distFromLeaf < 2) {
@@ -480,10 +495,12 @@ void ofApp::setup() {
     ofClear(0, 0, 0);
     drawBuffer.end();
     
-    drawBuffer2.allocate(bufferWidth, bufferHeight);
-    drawBuffer2.begin();
-    ofClear(0, 0, 0);
-    drawBuffer2.end();
+    if (numTrees > 1) {
+        drawBuffer2.allocate(bufferWidth, bufferHeight);
+        drawBuffer2.begin();
+        ofClear(0, 0, 0);
+        drawBuffer2.end();
+    }
 
 //    ofSetColor(200,200,220,200);
 //        ofSetColor(255, 0, 0, 50);
@@ -504,26 +521,44 @@ void ofApp::draw(){
 
     drawBuffer.begin();
     ofEnableBlendMode(params.renderParameters1.blendMode);
-    ofTranslate(ofGetWidth() / 4, ofGetHeight() / 2);
+    if (numTrees > 1) {
+        ofTranslate(ofGetWidth() / 4, ofGetHeight() / 2);
+    } else {
+        ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
+    }
     ofScale(screenScale, screenScale);
-    drawer1.drawAsPoints(rendered);
+    
+    switch (drawStyle) {
+        case POINTS:
+            drawer1.drawAsPoints(rendered);
+            break;
+        case LINES:
+            ofClear(0, 0, 0);
+            drawer1.drawAsLines(rendered);
+            break;
+        case CIRCLES:
+            ofClear(0, 0, 0);
+            drawer1.drawAsCircles(rendered);
+    }
     drawBuffer.end();
     
     drawBuffer.draw(0, 0);
     
-    drawBuffer2.begin();
-    ofEnableBlendMode(params.renderParameters2.blendMode);
-//    ofClear(0, 0, 0);
-    ofTranslate(3*ofGetWidth() / 4, ofGetHeight() / 2);
-//    ofTranslate(ofGetWidth() / 4 + 400, ofGetHeight() / 2);
-    ofScale(screenScale, screenScale);
-//    drawer2.drawAsFatPoints(rendered);
-    drawer2.drawAsPoints(rendered);
-//    drawer2.drawAsCircles(rendered);
-//    drawer2.drawAsLines(rendered);
-    drawBuffer2.end();
-    
-    drawBuffer2.draw(0, 0);
+    if (numTrees > 1) {
+        drawBuffer2.begin();
+        ofEnableBlendMode(params.renderParameters2.blendMode);
+        //    ofClear(0, 0, 0);
+        ofTranslate(3*ofGetWidth() / 4, ofGetHeight() / 2);
+        //    ofTranslate(ofGetWidth() / 4 + 400, ofGetHeight() / 2);
+        ofScale(screenScale, screenScale);
+        //    drawer2.drawAsFatPoints(rendered);
+        drawer2.drawAsPoints(rendered);
+        //    drawer2.drawAsCircles(rendered);
+        //    drawer2.drawAsLines(rendered);
+        drawBuffer2.end();
+        
+        drawBuffer2.draw(0, 0);
+    }
 }
 
 //--------------------------------------------------------------
