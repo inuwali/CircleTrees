@@ -50,6 +50,9 @@ TreeRenderParameters TreeRenderParameters::fromJson(ofJson json) {
         params.colorChooserIndex = json["colorChooserIndex"];
     } catch (const ofJson::type_error& e) { }
     try {
+        params.colorChooserIndex = json["colorSchemeIndex"];
+    } catch (const ofJson::type_error& e) { }
+    try {
         params.blendMode = json["blendMode"];
     } catch (const ofJson::type_error& e) { }
     
@@ -61,6 +64,7 @@ ofJson TreeRenderParameters::jsonRepresentation() {
     
     json = {{"drawChooserIndex", drawChooserIndex}};
     json += {"colorChooserIndex", colorChooserIndex};
+    json += {"colorSchemeIndex", colorSchemeIndex};
     json += {"blendMode", blendMode};
     
     return json;

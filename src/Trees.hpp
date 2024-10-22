@@ -13,7 +13,7 @@
 #include <math.h>
 #include "ofApp.h"
 #include "ofNode.h"
-
+#include "RenderObjects.hpp"
 
 struct BranchParameters {
 public:
@@ -217,10 +217,10 @@ public:
         float z;
 //        rotation.getRotate(angle, x, y, z);
         rot.getRotate(angle, x, y, z);
-        cout << angle << " * ";
-        cout << x << " * ";
-        cout << y << " * ";
-        cout << y << " * \n";
+//        cout << angle << " * ";
+//        cout << x << " * ";
+//        cout << y << " * ";
+//        cout << y << " * \n";
         RenderedTreeNode renderedNode = RenderedTreeNode(point, angle, ofVec2f(currentMatrix.getScale().x * tree->size, currentMatrix.getScale().y * tree->size), ofVec2f(0, 0), currentDepth, currentDepth, currentDepth, color);
 
         std::vector<RenderedTreeNode> children = std::vector<RenderedTreeNode>();
@@ -239,16 +239,14 @@ public:
     }
 };
 
-typedef ofColor (*ColorChooser)(RenderedTreeNode);
-typedef bool (*BinaryChooser)(RenderedTreeNode);
-
 class RenderedTreeDrawer {
 public:
     RenderedTree tree;
+    ColorScheme colorScheme;
     ColorChooser colorChooser;
     BinaryChooser drawPolicy;
 
-    RenderedTreeDrawer(RenderedTree tree, ColorChooser colorChooser, BinaryChooser drawPolicy = [](RenderedTreeNode n) { return true; }): tree(tree), colorChooser(colorChooser), drawPolicy(drawPolicy) {}
+    RenderedTreeDrawer(RenderedTree tree, ColorScheme colorScheme, ColorChooser colorChooser, BinaryChooser drawPolicy = [](RenderedTreeNode n) { return true; }): tree(tree), colorScheme(colorScheme), colorChooser(colorChooser), drawPolicy(drawPolicy) {}
     
     void drawAsLines(RenderedTree tree) {
         drawSubtreeLines(tree.root, nullptr);
@@ -256,7 +254,7 @@ public:
     
     void drawSubtreeLines(RenderedTreeNode node, RenderedTreeNode *parent) {
         if (drawPolicy(node) && parent != nullptr) {
-            ofSetColor(colorChooser(node));
+            ofSetColor(colorChooser(node, colorScheme));
             ofDrawLine(parent->position.x, parent->position.y, node.position.x, node.position.y);
         }
         for (RenderedTreeNode child: node.children) {
@@ -270,7 +268,7 @@ public:
     
     void drawSubtreeCircles(RenderedTreeNode node, RenderedTreeNode *parent) {
         if (drawPolicy(node)) {
-            ofSetColor(colorChooser(node));
+            ofSetColor(colorChooser(node, colorScheme));
             ofPushMatrix();
             ofRotateDeg(node.angle);
 //            if (parent != nullptr) {
@@ -290,7 +288,7 @@ public:
     
     void drawSubtreePoints(RenderedTreeNode node, RenderedTreeNode *parent) {
         if (drawPolicy(node)) {
-            ofSetColor(colorChooser(node));
+            ofSetColor(colorChooser(node, colorScheme));
             ofDrawLine(node.position.x, node.position.y, node.position.x+0.5, node.position.y+0.5);
         }
         for (RenderedTreeNode child: node.children) {
@@ -304,7 +302,7 @@ public:
     
     void drawSubtreeFatPoints(RenderedTreeNode node, RenderedTreeNode *parent) {
         if (drawPolicy(node)) {
-            ofSetColor(colorChooser(node));
+            ofSetColor(colorChooser(node, colorScheme));
             ofDrawEllipse(node.position.x, node.position.y, 3, 3);
         }
         for (RenderedTreeNode child: node.children) {
@@ -318,8 +316,12 @@ public:
     
     void drawSubtreeSquares(RenderedTreeNode node, RenderedTreeNode *parent) {
         if (drawPolicy(node)) {
-            ofSetColor(colorChooser(node));
-            ofDrawRectangle(node.position.x - node.size[0] / 2, node.position.y - node.size[0] / 2, node.size[0], node.size[0]);
+            ofSetColor(colorChooser(node, colorScheme));
+            ofPushMatrix();
+            ofTranslate(node.position.x, node.position.y);
+            ofRotateDeg(node.angle);
+            ofDrawRectangle(-node.size[0] / 2, -node.size[0] / 2, node.size[0], node.size[0]);
+            ofPopMatrix();
         }
         for (RenderedTreeNode child: node.children) {
             drawSubtreeSquares(child, &node);
@@ -339,8 +341,6 @@ public:
         }
     }
 };
-
-typedef NodeAnimator* (*AnimatorChooser)(TreeNode *, int, std::vector<NodeAnimator *>);
 
 class TreeAnimatorInstaller: public TreeVisitor<bool, bool> {
     std::vector<NodeAnimator *> animators;

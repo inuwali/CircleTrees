@@ -12,6 +12,7 @@
 
 #include "ofJson.h"
 #include "ofApp.h"
+#include "Trees.hpp"
 
 struct HSBFloats {
     float hue;
@@ -29,11 +30,13 @@ struct HSBFloats {
 struct TreeRenderParameters {
     int drawChooserIndex;
     int colorChooserIndex;
+    int colorSchemeIndex;
     ofBlendMode blendMode;
     
     TreeRenderParameters():
     drawChooserIndex(0),
     colorChooserIndex(0),
+    colorSchemeIndex(0),
     blendMode(OF_BLENDMODE_DISABLED) {}
         
     static TreeRenderParameters fromJson(ofJson json);
@@ -64,6 +67,5 @@ struct TreesParameters {
     
     ofJson jsonRepresentation();
 };
-
 
 #endif /* Parameters_hpp */
