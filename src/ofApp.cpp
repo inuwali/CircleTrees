@@ -43,12 +43,12 @@ TreesParameters setupParameters() {
     TreesParameters result = TreesParameters();
     
     result.treeDepth = 5;
-    result.animatorChooserIndex = 15;
+    result.animatorChooserIndex = 9;
     
     TreeRenderParameters renderParams1 = TreeRenderParameters();
     renderParams1.drawChooserIndex = 0;
     renderParams1.colorSchemeIndex = 3;
-    renderParams1.colorChooserIndex = 6;
+    renderParams1.colorChooserIndex = 2;
     renderParams1.blendMode = OF_BLENDMODE_SCREEN;
     
     TreeRenderParameters renderParams2 = TreeRenderParameters();
@@ -63,7 +63,7 @@ TreesParameters setupParameters() {
     HSBFloats bg = HSBFloats();
     bg.hue = 36;
     bg.saturation = 0;
-    bg.brightness = 10;
+    bg.brightness = 255;
     bg.alpha = 255;
     result.backgroundColor = bg;
     
@@ -101,42 +101,44 @@ int screenshotCount = 0;
 
 //--------------------------------------------------------------
 void ofApp::setup() {
-    reset();
+    reset(true);
     
     // Dear ImGui
     gui.setup();
 }
 
-void ofApp::reset() {
+void ofApp::reset(bool rereadParameters) {
     frameNum = 0;
     
-    params = TreesParameters();
-    
-    if (fileToLoad > 0) {
-        std::stringstream ss;  // Create a stringstream object
+    if (rereadParameters) {
+        params = TreesParameters();
         
-        ss << "/Users/owen/Programming/OpenFrameworks/CircleTrees/Artifacts/" << fileToLoad << "-params.json" ;
-        std::string paramsJsonFilename = ss.str();
-        
-        ofFile jsonFile(paramsJsonFilename);
-        if (jsonFile.exists()) {
-            params = TreesParameters::fromFile(paramsJsonFilename);
-        } else {
-            fileToLoad = 0;
+        if (fileToLoad > 0) {
+            std::stringstream ss;  // Create a stringstream object
+            
+            ss << "/Users/owen/Programming/OpenFrameworks/CircleTrees/Artifacts/" << fileToLoad << "-params.json" ;
+            std::string paramsJsonFilename = ss.str();
+            
+            ofFile jsonFile(paramsJsonFilename);
+            if (jsonFile.exists()) {
+                params = TreesParameters::fromFile(paramsJsonFilename);
+            } else {
+                fileToLoad = 0;
+            }
         }
-    }
-    
-    if (params.randomSeed > 0) {
-        randomSeed = params.randomSeed;
-    } else {
-        randomSeed = params.timestamp;
-        params.randomSeed = randomSeed;
-    }
-    
-    of::random::seed(randomSeed);
-    
-    if (fileToLoad == 0) {
-        params = setupParameters();
+        
+        if (params.randomSeed > 0) {
+            randomSeed = params.randomSeed;
+        } else {
+            randomSeed = params.timestamp;
+            params.randomSeed = randomSeed;
+        }
+        
+        of::random::seed(randomSeed);
+        
+        if (fileToLoad == 0) {
+            params = setupParameters();
+        }
     }
     
     //    windowWidth = 2000;
@@ -199,10 +201,13 @@ void ofApp::draw(){
     
     if (showGui && !captureNextScreen) {
         static uint64_t inputFileToLoad = 0;
+        static bool resetParams = true;
         
         ImGui::Begin("ofxImGui example-simple");
         bool goStopButtonPressed = ImGui::Button(running ? "Pause" : "Resume");
         bool doReset = ImGui::Button("Reset");
+        ImGui::SameLine();
+        bool resetParamsChanged = ImGui::Checkbox("Include parameters", &resetParams);
         //    bool newFileToLoad = ImGui::InputInt("File Number", &inputFileToLoad);
         bool newFileToLoad = ImGui::InputScalar("File Number", ImGuiDataType_U64, &inputFileToLoad);
         bool depthChanged = ImGui::InputInt("Depth", &params.treeDepth);
@@ -217,7 +222,7 @@ void ofApp::draw(){
         }
         
         if (doReset) {
-            reset();
+            reset(resetParams);
             return;
         }
         

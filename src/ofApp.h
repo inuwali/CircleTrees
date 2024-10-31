@@ -23,7 +23,7 @@ class ofApp : public ofBaseApp{
 		void dragEvent(ofDragInfo dragInfo) override;
 		void gotMessage(ofMessage msg) override;
     
-        void reset();
+        void reset(bool rereadParameters);
         void captureScreen();
 		
 };
