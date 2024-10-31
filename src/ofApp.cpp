@@ -36,23 +36,25 @@ int numTrees = 1;
 
 DrawStyle drawStyle = POINTS;
 
-bool running = false;
+bool running = true;
 uint64_t frameNum = 0;
 
 TreesParameters setupParameters() {
     TreesParameters result = TreesParameters();
     
-    result.treeDepth = 4;
-    result.animatorChooserIndex = 1;
+    result.treeDepth = 5;
+    result.animatorChooserIndex = 15;
     
     TreeRenderParameters renderParams1 = TreeRenderParameters();
     renderParams1.drawChooserIndex = 0;
-    renderParams1.colorChooserIndex = 7;
-    renderParams1.blendMode = OF_BLENDMODE_DISABLED;
+    renderParams1.colorSchemeIndex = 3;
+    renderParams1.colorChooserIndex = 6;
+    renderParams1.blendMode = OF_BLENDMODE_SCREEN;
     
     TreeRenderParameters renderParams2 = TreeRenderParameters();
     renderParams2.drawChooserIndex = 0;
-    renderParams2.colorChooserIndex = 6;
+    renderParams1.colorSchemeIndex = 3;
+    renderParams2.colorChooserIndex = 4;
     renderParams2.blendMode = OF_BLENDMODE_DISABLED;
     
     result.renderParameters1 = renderParams1;
@@ -61,7 +63,7 @@ TreesParameters setupParameters() {
     HSBFloats bg = HSBFloats();
     bg.hue = 36;
     bg.saturation = 0;
-    bg.brightness = 255;
+    bg.brightness = 10;
     bg.alpha = 255;
     result.backgroundColor = bg;
     
@@ -79,6 +81,10 @@ ofFbo drawBuffer;
 ofFbo drawBuffer2;
 
 ofParameter<int> param1;
+
+bool captureNextScreen = false;
+
+bool showGui = false;
 ofxImGui::Gui gui;
 
 int getRetinaScale() {
@@ -188,31 +194,36 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
+    // GUI stuff
     gui.begin();
     
-    static uint64_t inputFileToLoad = 0;
-    ImGui::Begin("ofxImGui example-simple");
-    bool pressed = ImGui::Button(running ? "Pause" : "Resume");
-    bool doReset = ImGui::Button("Reset");
-//    bool newFileToLoad = ImGui::InputInt("File Number", &inputFileToLoad);
-    bool newFileToLoad = ImGui::InputScalar("File Number", ImGuiDataType_U64, &inputFileToLoad);
-    ImGui::End();
-    
-//    ImGui::ShowDemoWindow();
-    
-    gui.end();
-    
-    if (newFileToLoad) {
-        fileToLoad = inputFileToLoad;
-    }
-    
-    if (doReset) {
-        reset();
-        return;
-    }
-    
-    if (pressed) {
-        running = !running;
+    if (showGui && !captureNextScreen) {
+        static uint64_t inputFileToLoad = 0;
+        
+        ImGui::Begin("ofxImGui example-simple");
+        bool goStopButtonPressed = ImGui::Button(running ? "Pause" : "Resume");
+        bool doReset = ImGui::Button("Reset");
+        //    bool newFileToLoad = ImGui::InputInt("File Number", &inputFileToLoad);
+        bool newFileToLoad = ImGui::InputScalar("File Number", ImGuiDataType_U64, &inputFileToLoad);
+        bool depthChanged = ImGui::InputInt("Depth", &params.treeDepth);
+        ImGui::End();
+        
+        //    ImGui::ShowDemoWindow();
+        
+        gui.end();
+        
+        if (newFileToLoad) {
+            fileToLoad = inputFileToLoad;
+        }
+        
+        if (doReset) {
+            reset();
+            return;
+        }
+        
+        if (goStopButtonPressed) {
+            running = !running;
+        }
     }
 
     RenderedTree rendered = renderer->render();
@@ -272,6 +283,11 @@ void ofApp::draw(){
         
         drawBuffer2.draw(0, 0);
     }
+    
+    if (captureNextScreen) {
+        captureNextScreen = false;
+        captureScreen();
+    }
 }
 
 //--------------------------------------------------------------
@@ -279,8 +295,7 @@ void ofApp::exit(){
     gui.exit();
 }
 
-//--------------------------------------------------------------
-void ofApp::keyPressed(int key) {
+void ofApp::captureScreen() {
     std::stringstream ss;  // Create a stringstream object
     
     // Use the << operator to concatenate values into the stringstream
@@ -289,44 +304,37 @@ void ofApp::keyPressed(int key) {
         ss << "-" << screenshotCount;
     }
     ss << ".png";
-        
+    
     // Convert the stringstream to a std::string
     std::string screenshotFilename = ss.str();
     
     std::stringstream ss2;  // Create a stringstream object
-
+    
     ss2 << "/Users/owen/Programming/OpenFrameworks/CircleTrees/Artifacts/" << params.timestamp << "-params.json" ;
     std::string paramsJsonFilename = ss2.str();
+
+    if (screenshotCount == 0) {
+        ofSavePrettyJson(paramsJsonFilename, params.jsonRepresentation());
+    }
+    
+    ofImage screenImage;
+    screenImage.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
+    screenImage.save(screenshotFilename);  // Save the screenshot
+    ofLog() << "Screenshot saved!";
+    
+    screenshotCount += 1;
+}
+
+//--------------------------------------------------------------
+void ofApp::keyPressed(int key) {
+    if (key == OF_KEY_RETURN) {
+        showGui = !showGui;
+        return;
+    }
     
     if (key == 's') {
-        if (screenshotCount == 0) {
-            ofSavePrettyJson(paramsJsonFilename, params.jsonRepresentation());
-        }
-
-        ofImage screenImage;
-        screenImage.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
-        screenImage.save(screenshotFilename);  // Save the screenshot
-        ofLog() << "Screenshot saved!";
-        
-        screenshotCount += 1;
+        captureNextScreen = true;
     }
-//    if (key == 'l') {
-//        ofPixels pixels;
-//        drawBuffer.readToPixels(pixels);
-//        ofImage image;
-//        image.setFromPixels(pixels);
-//        image.save("/Users/owen/Screenshots/openFrameworks/screenshot.png");
-////        ofImage screenImage;
-////        screenImage.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
-////        screenImage.save("/Users/owen/Desktop/screenshot.png");  // Save the screenshot
-//        ofLog() << "Screenshot saved!";
-//    }
-//    if (key == 'r') {
-//        ofImage screenImage;
-//        screenImage.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
-//        screenImage.save("/Users/owen/Desktop/screenshot.png");  // Save the screenshot
-//        ofLog() << "Screenshot saved!";
-//    }
 }
 
 //--------------------------------------------------------------
