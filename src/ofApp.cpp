@@ -6,6 +6,8 @@
 #include <math.h>
 #include <sstream>  // For std::stringstream
 
+#include "ofxImGui.h"
+
 // 0-1: sawtooth and square
 // 2-3: some sqrt stuff
 // 4: abs
@@ -33,6 +35,9 @@ int windowHeight = 1000;
 int numTrees = 1;
 
 DrawStyle drawStyle = POINTS;
+
+bool running = false;
+uint64_t frameNum = 0;
 
 TreesParameters setupParameters() {
     TreesParameters result = TreesParameters();
@@ -73,6 +78,9 @@ TreesParameters params;
 ofFbo drawBuffer;
 ofFbo drawBuffer2;
 
+ofParameter<int> param1;
+ofxImGui::Gui gui;
+
 int getRetinaScale() {
     auto window = dynamic_cast<ofAppGLFWWindow*>(ofGetWindowPtr());
     if (window) {
@@ -87,6 +95,15 @@ int screenshotCount = 0;
 
 //--------------------------------------------------------------
 void ofApp::setup() {
+    reset();
+    
+    // Dear ImGui
+    gui.setup();
+}
+
+void ofApp::reset() {
+    frameNum = 0;
+    
     params = TreesParameters();
     
     if (fileToLoad > 0) {
@@ -95,7 +112,12 @@ void ofApp::setup() {
         ss << "/Users/owen/Programming/OpenFrameworks/CircleTrees/Artifacts/" << fileToLoad << "-params.json" ;
         std::string paramsJsonFilename = ss.str();
         
-        params = TreesParameters::fromFile(paramsJsonFilename);
+        ofFile jsonFile(paramsJsonFilename);
+        if (jsonFile.exists()) {
+            params = TreesParameters::fromFile(paramsJsonFilename);
+        } else {
+            fileToLoad = 0;
+        }
     }
     
     if (params.randomSeed > 0) {
@@ -106,38 +128,38 @@ void ofApp::setup() {
     }
     
     of::random::seed(randomSeed);
-
+    
     if (fileToLoad == 0) {
         params = setupParameters();
     }
-
-//    windowWidth = 2000;
+    
+    //    windowWidth = 2000;
     windowWidth = 1000;
-//    windowHeight = 1000;
+    //    windowHeight = 1000;
     screenScale = getRetinaScale();
     ofSetWindowShape(windowWidth * screenScale, windowHeight * screenScale);
-
+    
     TreeGenerator generator = TreeGenerator(params.treeDepth, windowHeight / 8);
     tree = generator.generateTree();
-        
+    
     animator = new TreeAnimator(tree);
-        
+    
     TreeAnimatorInstaller animatorInstaller = TreeAnimatorInstaller(tree,
                                                                     legacyRenderObjects.animators,
                                                                     legacyRenderObjects.animatorChoosers[params.animatorChooserIndex]);
-
+    
     animatorInstaller.visitAll();
-
+    
     renderer = new TreeRenderer(tree);
     
     ofSetCircleResolution(200);
-//    ofEnableBlendMode(OF_BLENDMODE_SCREEN);
-
+    //    ofEnableBlendMode(OF_BLENDMODE_SCREEN);
+    
     ofSetFrameRate(frameRate);
-        
+    
     bufferWidth = ofGetWidth() * screenScale;
     bufferHeight = ofGetHeight() * screenScale;
-
+    
     drawBuffer.allocate(bufferWidth, bufferHeight);
     drawBuffer.begin();
     ofClear(0, 0, 0);
@@ -149,20 +171,50 @@ void ofApp::setup() {
         ofClear(0, 0, 0);
         drawBuffer2.end();
     }
-
-//    ofSetColor(200,200,220,200);
-//        ofSetColor(255, 0, 0, 50);
+    
+    //    ofSetColor(200,200,220,200);
+    //        ofSetColor(255, 0, 0, 50);
     ofFill();
     ofBackground(ofColor::fromHsb(params.backgroundColor.hue, params.backgroundColor.saturation, params.backgroundColor.brightness, params.backgroundColor.alpha));
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
-    animator->visitAll(ofGetFrameNum() / (float)frameRate, true);
+    if (running) {
+        animator->visitAll(frameNum / (float)frameRate, true);
+        frameNum += 1;
+    }
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
+    gui.begin();
+    
+    static uint64_t inputFileToLoad = 0;
+    ImGui::Begin("ofxImGui example-simple");
+    bool pressed = ImGui::Button(running ? "Pause" : "Resume");
+    bool doReset = ImGui::Button("Reset");
+//    bool newFileToLoad = ImGui::InputInt("File Number", &inputFileToLoad);
+    bool newFileToLoad = ImGui::InputScalar("File Number", ImGuiDataType_U64, &inputFileToLoad);
+    ImGui::End();
+    
+//    ImGui::ShowDemoWindow();
+    
+    gui.end();
+    
+    if (newFileToLoad) {
+        fileToLoad = inputFileToLoad;
+    }
+    
+    if (doReset) {
+        reset();
+        return;
+    }
+    
+    if (pressed) {
+        running = !running;
+    }
+
     RenderedTree rendered = renderer->render();
     RenderedTreeDrawer drawer1 = RenderedTreeDrawer(rendered, legacyRenderObjects.colorSchemes[params.renderParameters1.colorSchemeIndex], legacyRenderObjects.colorChoosers[params.renderParameters1.colorChooserIndex], legacyRenderObjects.drawChoosers[params.renderParameters1.drawChooserIndex]);
     RenderedTreeDrawer drawer2 = RenderedTreeDrawer(rendered, legacyRenderObjects.colorSchemes[params.renderParameters2.colorSchemeIndex], legacyRenderObjects.colorChoosers[params.renderParameters2.colorChooserIndex], legacyRenderObjects.drawChoosers[params.renderParameters2.drawChooserIndex]);
@@ -224,7 +276,7 @@ void ofApp::draw(){
 
 //--------------------------------------------------------------
 void ofApp::exit(){
-
+    gui.exit();
 }
 
 //--------------------------------------------------------------
