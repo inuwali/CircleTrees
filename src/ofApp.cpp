@@ -6,6 +6,8 @@
 #include <math.h>
 #include <sstream>  // For std::stringstream
 
+#include "ofxImGui.h"
+
 // 0-1: sawtooth and square
 // 2-3: some sqrt stuff
 // 4: abs
@@ -34,20 +36,25 @@ int numTrees = 1;
 
 DrawStyle drawStyle = POINTS;
 
+bool running = true;
+uint64_t frameNum = 0;
+
 TreesParameters setupParameters() {
     TreesParameters result = TreesParameters();
     
-    result.treeDepth = 4;
-    result.animatorChooserIndex = 1;
+    result.treeDepth = 5;
+    result.animatorChooserIndex = 9;
     
     TreeRenderParameters renderParams1 = TreeRenderParameters();
     renderParams1.drawChooserIndex = 0;
-    renderParams1.colorChooserIndex = 7;
-    renderParams1.blendMode = OF_BLENDMODE_DISABLED;
+    renderParams1.colorSchemeIndex = 3;
+    renderParams1.colorChooserIndex = 2;
+    renderParams1.blendMode = OF_BLENDMODE_SCREEN;
     
     TreeRenderParameters renderParams2 = TreeRenderParameters();
     renderParams2.drawChooserIndex = 0;
-    renderParams2.colorChooserIndex = 6;
+    renderParams1.colorSchemeIndex = 3;
+    renderParams2.colorChooserIndex = 4;
     renderParams2.blendMode = OF_BLENDMODE_DISABLED;
     
     result.renderParameters1 = renderParams1;
@@ -73,6 +80,13 @@ TreesParameters params;
 ofFbo drawBuffer;
 ofFbo drawBuffer2;
 
+ofParameter<int> param1;
+
+bool captureNextScreen = false;
+
+bool showGui = false;
+ofxImGui::Gui gui;
+
 int getRetinaScale() {
     auto window = dynamic_cast<ofAppGLFWWindow*>(ofGetWindowPtr());
     if (window) {
@@ -87,57 +101,73 @@ int screenshotCount = 0;
 
 //--------------------------------------------------------------
 void ofApp::setup() {
-    params = TreesParameters();
+    reset(true);
     
-    if (fileToLoad > 0) {
-        std::stringstream ss;  // Create a stringstream object
-        
-        ss << "/Users/owen/Programming/OpenFrameworks/CircleTrees/Artifacts/" << fileToLoad << "-params.json" ;
-        std::string paramsJsonFilename = ss.str();
-        
-        params = TreesParameters::fromFile(paramsJsonFilename);
-    }
-    
-    if (params.randomSeed > 0) {
-        randomSeed = params.randomSeed;
-    } else {
-        randomSeed = params.timestamp;
-        params.randomSeed = randomSeed;
-    }
-    
-    of::random::seed(randomSeed);
+    // Dear ImGui
+    gui.setup();
+}
 
-    if (fileToLoad == 0) {
-        params = setupParameters();
+void ofApp::reset(bool rereadParameters) {
+    frameNum = 0;
+    
+    if (rereadParameters) {
+        params = TreesParameters();
+        
+        if (fileToLoad > 0) {
+            std::stringstream ss;  // Create a stringstream object
+            
+            ss << "/Users/owen/Programming/OpenFrameworks/CircleTrees/Artifacts/" << fileToLoad << "-params.json" ;
+            std::string paramsJsonFilename = ss.str();
+            
+            ofFile jsonFile(paramsJsonFilename);
+            if (jsonFile.exists()) {
+                params = TreesParameters::fromFile(paramsJsonFilename);
+            } else {
+                fileToLoad = 0;
+            }
+        }
+        
+        if (params.randomSeed > 0) {
+            randomSeed = params.randomSeed;
+        } else {
+            randomSeed = params.timestamp;
+            params.randomSeed = randomSeed;
+        }
+        
+        of::random::seed(randomSeed);
+        
+        if (fileToLoad == 0) {
+            params = setupParameters();
+        }
     }
-
-//    windowWidth = 2000;
+    
+    //    windowWidth = 2000;
     windowWidth = 1000;
-//    windowHeight = 1000;
+    //    windowHeight = 1000;
     screenScale = getRetinaScale();
     ofSetWindowShape(windowWidth * screenScale, windowHeight * screenScale);
-
+    
     TreeGenerator generator = TreeGenerator(params.treeDepth, windowHeight / 8);
     tree = generator.generateTree();
-        
+    
     animator = new TreeAnimator(tree);
-        
+    
     TreeAnimatorInstaller animatorInstaller = TreeAnimatorInstaller(tree,
                                                                     legacyRenderObjects.animators,
                                                                     legacyRenderObjects.animatorChoosers[params.animatorChooserIndex]);
-
+    
     animatorInstaller.visitAll();
-
+    
     renderer = new TreeRenderer(tree);
     
     ofSetCircleResolution(200);
-//    ofEnableBlendMode(OF_BLENDMODE_SCREEN);
-
+    //    ofEnableBlendMode(OF_BLENDMODE_SCREEN);
+    
     ofSetFrameRate(frameRate);
-        
+    
     bufferWidth = ofGetWidth() * screenScale;
     bufferHeight = ofGetHeight() * screenScale;
-
+    
     drawBuffer.allocate(bufferWidth, bufferHeight);
     drawBuffer.begin();
     ofClear(0, 0, 0);
@@ -149,20 +179,58 @@ void ofApp::setup() {
         ofClear(0, 0, 0);
         drawBuffer2.end();
     }
-
-//    ofSetColor(200,200,220,200);
-//        ofSetColor(255, 0, 0, 50);
+    
+    //    ofSetColor(200,200,220,200);
+    //        ofSetColor(255, 0, 0, 50);
     ofFill();
     ofBackground(ofColor::fromHsb(params.backgroundColor.hue, params.backgroundColor.saturation, params.backgroundColor.brightness, params.backgroundColor.alpha));
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
-    animator->visitAll(ofGetFrameNum() / (float)frameRate, true);
+    if (running) {
+        animator->visitAll(frameNum / (float)frameRate, true);
+        frameNum += 1;
+    }
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
+    // GUI stuff
+    gui.begin();
+    
+    if (showGui && !captureNextScreen) {
+        static uint64_t inputFileToLoad = 0;
+        static bool resetParams = true;
+        
+        ImGui::Begin("ofxImGui example-simple");
+        bool goStopButtonPressed = ImGui::Button(running ? "Pause" : "Resume");
+        bool doReset = ImGui::Button("Reset");
+        ImGui::SameLine();
+        bool resetParamsChanged = ImGui::Checkbox("Include parameters", &resetParams);
+        //    bool newFileToLoad = ImGui::InputInt("File Number", &inputFileToLoad);
+        bool newFileToLoad = ImGui::InputScalar("File Number", ImGuiDataType_U64, &inputFileToLoad);
+        bool depthChanged = ImGui::InputInt("Depth", &params.treeDepth);
+        ImGui::End();
+        
+        //    ImGui::ShowDemoWindow();
+        
+        gui.end();
+        
+        if (newFileToLoad) {
+            fileToLoad = inputFileToLoad;
+        }
+        
+        if (doReset) {
+            reset(resetParams);
+            return;
+        }
+        
+        if (goStopButtonPressed) {
+            running = !running;
+        }
+    }
+
     RenderedTree rendered = renderer->render();
     RenderedTreeDrawer drawer1 = RenderedTreeDrawer(rendered, legacyRenderObjects.colorSchemes[params.renderParameters1.colorSchemeIndex], legacyRenderObjects.colorChoosers[params.renderParameters1.colorChooserIndex], legacyRenderObjects.drawChoosers[params.renderParameters1.drawChooserIndex]);
     RenderedTreeDrawer drawer2 = RenderedTreeDrawer(rendered, legacyRenderObjects.colorSchemes[params.renderParameters2.colorSchemeIndex], legacyRenderObjects.colorChoosers[params.renderParameters2.colorChooserIndex], legacyRenderObjects.drawChoosers[params.renderParameters2.drawChooserIndex]);
@@ -220,15 +288,19 @@ void ofApp::draw(){
         
         drawBuffer2.draw(0, 0);
     }
+    
+    if (captureNextScreen) {
+        captureNextScreen = false;
+        captureScreen();
+    }
 }
 
 //--------------------------------------------------------------
 void ofApp::exit(){
-
+    gui.exit();
 }
 
-//--------------------------------------------------------------
-void ofApp::keyPressed(int key) {
+void ofApp::captureScreen() {
     std::stringstream ss;  // Create a stringstream object
     
     // Use the << operator to concatenate values into the stringstream
@@ -237,44 +309,37 @@ void ofApp::keyPressed(int key) {
         ss << "-" << screenshotCount;
     }
     ss << ".png";
-        
+    
     // Convert the stringstream to a std::string
     std::string screenshotFilename = ss.str();
     
     std::stringstream ss2;  // Create a stringstream object
-
+    
     ss2 << "/Users/owen/Programming/OpenFrameworks/CircleTrees/Artifacts/" << params.timestamp << "-params.json" ;
     std::string paramsJsonFilename = ss2.str();
+
+    if (screenshotCount == 0) {
+        ofSavePrettyJson(paramsJsonFilename, params.jsonRepresentation());
+    }
+    
+    ofImage screenImage;
+    screenImage.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
+    screenImage.save(screenshotFilename);  // Save the screenshot
+    ofLog() << "Screenshot saved!";
+    
+    screenshotCount += 1;
+}
+
+//--------------------------------------------------------------
+void ofApp::keyPressed(int key) {
+    if (key == OF_KEY_RETURN) {
+        showGui = !showGui;
+        return;
+    }
     
     if (key == 's') {
-        if (screenshotCount == 0) {
-            ofSavePrettyJson(paramsJsonFilename, params.jsonRepresentation());
-        }
-
-        ofImage screenImage;
-        screenImage.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
-        screenImage.save(screenshotFilename);  // Save the screenshot
-        ofLog() << "Screenshot saved!";
-        
-        screenshotCount += 1;
+        captureNextScreen = true;
     }
-//    if (key == 'l') {
-//        ofPixels pixels;
-//        drawBuffer.readToPixels(pixels);
-//        ofImage image;
-//        image.setFromPixels(pixels);
-//        image.save("/Users/owen/Screenshots/openFrameworks/screenshot.png");
-////        ofImage screenImage;
-////        screenImage.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
-////        screenImage.save("/Users/owen/Desktop/screenshot.png");  // Save the screenshot
-//        ofLog() << "Screenshot saved!";
-//    }
-//    if (key == 'r') {
-//        ofImage screenImage;
-//        screenImage.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
-//        screenImage.save("/Users/owen/Desktop/screenshot.png");  // Save the screenshot
-//        ofLog() << "Screenshot saved!";
-//    }
 }
 
 //--------------------------------------------------------------
